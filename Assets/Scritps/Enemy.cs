@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Enemy : MonoBehaviour
+{
+    private Rigidbody2D rigid;
+
+    public int hp;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        rigid = GetComponent<Rigidbody2D>();
+
+        hp = 500;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+    public void OnDamaged(int damage, float intensityX, float intensityY, Vector2 targetPos)
+    {
+        hp -= damage;
+        int dirc = transform.position.x - targetPos.x > 0 ? 1 : -1;
+        rigid.AddForce(new Vector2(dirc * intensityX, intensityY), ForceMode2D.Impulse);
+        Invoke("OffDamaged", 0.75f);
+    }
+
+    public void OffDamaged()
+    {
+    }
+}
