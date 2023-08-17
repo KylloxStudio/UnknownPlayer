@@ -37,9 +37,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: isAttacking_01
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: isDashing
     m_EventTreshold: 0
@@ -211,9 +208,6 @@ AnimatorStateMachine:
   - serializedVersion: 1
     m_State: {fileID: -4063527484178251155}
     m_Position: {x: 330, y: 250, z: 0}
-  - serializedVersion: 1
-    m_State: {fileID: -302667164556608416}
-    m_Position: {x: 365, y: 315, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions:
   - {fileID: 7312867718317027416}
@@ -223,7 +217,7 @@ AnimatorStateMachine:
   m_StateMachineBehaviours: []
   m_AnyStatePosition: {x: 100, y: 230, z: 0}
   m_EntryPosition: {x: 30, y: 90, z: 0}
-  m_ExitPosition: {x: 380, y: 340, z: 0}
+  m_ExitPosition: {x: 350, y: 400, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: -5207896561494834595}
 --- !u!1101 &-6145628974706259408
@@ -682,32 +676,6 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &-302667164556608416
-AnimatorState:
-  serializedVersion: 6
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Player1_Attack_05 0
-  m_Speed: 1
-  m_CycleOffset: 0
-  m_Transitions: []
-  m_StateMachineBehaviours: []
-  m_Position: {x: 50, y: 50, z: 0}
-  m_IKOnFeet: 0
-  m_WriteDefaultValues: 1
-  m_Mirror: 0
-  m_SpeedParameterActive: 0
-  m_MirrorParameterActive: 0
-  m_CycleOffsetParameterActive: 0
-  m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: a7ff2c6001491284ca580c56bb7d52a5, type: 2}
-  m_Tag: 
-  m_SpeedParameter: 
-  m_MirrorParameter: 
-  m_CycleOffsetParameter: 
-  m_TimeParameter: 
 --- !u!91 &9100000
 AnimatorController:
   m_ObjectHideFlags: 0
@@ -860,9 +828,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: isAttacking_02
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: isDashing
     m_EventTreshold: 0
@@ -888,9 +853,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: isAttacking_05
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: isDashing
     m_EventTreshold: 0
@@ -1331,9 +1293,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: isMoving
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: isDashing
     m_EventTreshold: 0
@@ -1653,9 +1612,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: isAttacking_03
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: isDashing
     m_EventTreshold: 0

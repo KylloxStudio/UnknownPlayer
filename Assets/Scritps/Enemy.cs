@@ -5,6 +5,7 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     private Rigidbody2D rigid;
+    private Animator anim;
 
     public int hp;
 
@@ -12,8 +13,7 @@ public class Enemy : MonoBehaviour
     void Start()
     {
         rigid = GetComponent<Rigidbody2D>();
-
-        hp = 500;
+        anim = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -27,10 +27,12 @@ public class Enemy : MonoBehaviour
         hp -= damage;
         int dirc = transform.position.x - targetPos.x > 0 ? 1 : -1;
         rigid.AddForce(new Vector2(dirc * intensityX, intensityY), ForceMode2D.Impulse);
-        Invoke("OffDamaged", 0.75f);
+        anim.SetTrigger("doDamaged");
+        Invoke("OffDamaged", anim.GetCurrentAnimatorStateInfo(0).length);
     }
 
     public void OffDamaged()
     {
+        anim.ResetTrigger("doDamaged");
     }
 }

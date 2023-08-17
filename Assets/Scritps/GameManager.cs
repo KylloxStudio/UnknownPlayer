@@ -1,86 +1,54 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Tilemaps;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public Player1 player1;
+    public Enemy enemy;
     public Grid grid;
     public Tilemap tilemap;
     public GameCamera gameCamera;
-    public Text hp;
-    public Text stamina;
-
-    public bool isChangingTextColor;
+    public UIManager ui;
 
     // Start is called before the first frame update
     private void Awake()
     {
         Instance = this;
-        hp.text = "HP: 500";
-        stamina.text = "Stamina: 2000";
     }
 
     // Update is called once per frame
     private void Update()
     {
-        if (player1.health > int.Parse(hp.text.Split(' ')[1]))
-        {
-            StartCoroutine(ChangeTextColor(hp, new Color(0, 1, 0)));
-        }
-
-        if (player1.health < int.Parse(hp.text.Split(' ')[1]))
-        {
-            StartCoroutine(ChangeTextColor(hp, new Color(1, 0, 0)));
-        }
-
-        hp.text = "HP: " + player1.health.ToString();
-        stamina.text = "Stamina: " + player1.stamina.ToString();
     }
 
-    public IEnumerator ChangeTextColor(Text text, Color color)
+    public static Player1 GetPlayer1()
     {
-        isChangingTextColor = true;
-        Color originColor = text.color;
-        for (int i = 0; i < 2; i++)
-        {
-            text.color = color;
-            yield return new WaitForSeconds(0.1f);
-            text.color = originColor;
-            yield return new WaitForSeconds(0.1f);
-        }
-        isChangingTextColor = false;
+        return Instance.player1;
     }
 
-    public Text GetText(string name)
+    public static Enemy GetEnemy()
     {
-        if (name == "hp")
-        {
-            return hp;
-        }
-
-        if (name == "stamina")
-        {
-            return stamina;
-        }
-
-        return null;
+        return Instance.enemy;
     }
 
-    public Grid GetGrid()
+    public static UIManager GetUIManager()
     {
-        return grid;
+        return Instance.ui;
     }
 
-    public Tilemap GetTilemap()
+    public static Grid GetGrid()
     {
-        return tilemap;
+        return Instance.grid;
     }
 
-    public GameCamera GetCamera()
+    public static Tilemap GetTilemap()
     {
-        return gameCamera;
+        return Instance.tilemap;
+    }
+
+    public static GameCamera GetCamera()
+    {
+        return Instance.gameCamera;
     }
 }

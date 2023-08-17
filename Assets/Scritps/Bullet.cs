@@ -29,7 +29,7 @@ public class Bullet : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            collision.GetComponent<Enemy>().OnDamaged(30, 1.7f, 0, transform.position);
+            collision.GetComponent<Enemy>().OnDamaged(60, 1.7f, 0, transform.position);
             DestroyBullet();
         }
     }

@@ -1,16 +1,13 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 public class Player1 : MonoBehaviour
 {
     private BoxCollider2D[] boxColliders;
     private Rigidbody2D rigid;
-    private SpriteRenderer spriteRenderer;
     private Animator anim;
-    private GameManager gameManager;
-    private Grid grid;
-    private Tilemap tilemap;
+    private UIManager ui;
     private GameCamera gameCamera;
 
     public float maxSpeed;
@@ -20,7 +17,9 @@ public class Player1 : MonoBehaviour
     public int stamina;
     public bool is1StepJumping;
     public bool is2StepJumping;
+    public bool isMoving;
     public bool isAttacking;
+    public bool isAttackCanceled;
     public bool isClimbing;
     public bool isCanJump;
     public bool isCanMove;
@@ -29,9 +28,9 @@ public class Player1 : MonoBehaviour
     public bool isDead;
     public bool ignoreDamaged;
 
-    public Vector3Int cellTilePos;
-    public Vector3 worldTilePos;
-    public Vector2 victimPos;
+    [SerializeField]
+    private Coroutine runningCoroutine;
+
     public Transform attackPoint;
     public Vector2 attackRange;
     public GameObject bullet;
@@ -42,21 +41,14 @@ public class Player1 : MonoBehaviour
     {
         boxColliders = GetComponents<BoxCollider2D>();
         rigid = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
-        gameManager = GameManager.Instance;
-        grid = gameManager.GetGrid();
-        tilemap = gameManager.GetTilemap();
-        gameCamera = gameManager.GetCamera();
+        ui = GameManager.GetUIManager();
+        gameCamera = GameManager.GetCamera();
 
-        maxSpeed = 8.25f;
-        jumpPower = 12.75f;
-        climbSpeed = 8.25f;
-        health = 500;
-        stamina = 2000;
         is1StepJumping = false;
         is2StepJumping = false;
         isAttacking = false;
+        isAttackCanceled = false;
         isClimbing = false;
         isCanJump = true;
         isCanMove = true;
@@ -64,16 +56,24 @@ public class Player1 : MonoBehaviour
         isDamaged = false;
         isDead = false;
 
-        cellTilePos = new Vector3Int();
-        worldTilePos = new Vector3();
-        victimPos = new Vector2();
+        runningCoroutine = null;
     }
 
     private void Update()
     {
-        // Attack Animation
+        // Animations
         if (anim != null)
         {
+            // Walking Animation
+            if (Mathf.Abs(rigid.velocity.x) > 0.3f)
+            {
+                anim.SetBool("isMoving", true);
+            }
+            else
+            {
+                anim.SetBool("isMoving", false);
+            }
+
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_01") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
                 isAttacking = false;
@@ -104,15 +104,6 @@ public class Player1 : MonoBehaviour
                 anim.SetBool("isAttacking_05", false);
             }
 
-            /*
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_Down") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-            {
-                isAttacking = false;
-                anim.SetBool("isAttacking_Down", false);
-                anim.SetFloat("DownAttackSpeed", 1f);
-            }
-            */
-
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Death") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
                 Destroy(gameObject);
@@ -120,17 +111,10 @@ public class Player1 : MonoBehaviour
         }
 
         // Check Can Jump
-        if (isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing"))
-        {
-            isCanJump = false;
-        }
-        else
-        {
-            isCanJump = true;
-        }
+        isCanJump = CheckCanJump();
 
         // Jump
-        if (Input.GetKeyDown(KeyCode.W) && isCanJump)
+        if (isCanJump && Input.GetKeyDown(KeyCode.W))
         {
             if (is2StepJumping)
             {
@@ -146,77 +130,20 @@ public class Player1 : MonoBehaviour
             is1StepJumping = true;
         }
 
-        // Down Attack
-        /*
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            if (stamina - 50 < 0)
-            {
-                if (!gameManager.isChangingTextColor)
-                {
-                    StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                }
-                return;
-            }
-
-            if (isAttacking)
-            {
-                return;
-            }
-
-            float distance = Vector2.Distance(transform.position, victimPos);
-            if (victimPos == new Vector2())
-            {
-                distance = Vector2.Distance(transform.position, worldTilePos);
-            }
-
-            if (distance <= 5.8f)
-            {
-                return;
-            }
-
-            if (distance <= 10f)
-            {
-                anim.SetFloat("DownAttackSpeed", 2f);
-            }
-
-            rigid.AddForce(Vector2.down * (distance + 10f), ForceMode2D.Impulse);
-
-            isAttacking = true;
-            UseStamina(50);
-            anim.SetBool("isAttacking_Down", true);
-        }
-        */
-
         // Check Can Move
-        if (Input.GetKey(KeyCode.LeftShift) || isAttacking || isDamaged || isDead || anim.GetBool("isDashing"))
-        {
-            isCanMove = false;
-        }
-        else
-        {
-            isCanMove = true;
-        }
+        isCanMove = CheckCanMove();
 
         // Move
         if (isCanMove)
         {
             if (Input.GetKey(KeyCode.A))
             {
-                rigid.AddForce(Vector2.left * 1.2f, ForceMode2D.Impulse);
-            }
-            else
-            {
-                rigid.AddForce(Vector2.left * 0.97f, ForceMode2D.Impulse);
+                rigid.AddForce(Vector2.left * 1.1f, ForceMode2D.Impulse);
             }
 
             if (Input.GetKey(KeyCode.D))
             {
-                rigid.AddForce(Vector2.right * 1.2f, ForceMode2D.Impulse);
-            }
-            else
-            {
-                rigid.AddForce(Vector2.right * 0.97f, ForceMode2D.Impulse);
+                rigid.AddForce(Vector2.right * 1.1f, ForceMode2D.Impulse);
             }
 
             if (rigid.velocity.x > maxSpeed) // Right Max Speed
@@ -229,7 +156,7 @@ public class Player1 : MonoBehaviour
             }
         }
 
-        // Direction
+        // Player Direction
         if (!(isDamaged || isDead || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
         {
             if (Input.GetKey(KeyCode.A))
@@ -242,133 +169,71 @@ public class Player1 : MonoBehaviour
             }
         }
 
-        // Walking Animation
-        if (!anim.GetBool("isDashing"))
-        {
-            if (Mathf.Abs(rigid.velocity.x) > 0.3f)
-            {
-                anim.SetBool("isMoving", true);
-            }
-            else
-            {
-                anim.SetBool("isMoving", false);
-            }
-        }
-
-        // Normal Attack
         if (!Input.GetKey(KeyCode.LeftShift))
         {
-            if (isAttacking || isDamaged || anim.GetBool("isDashing"))
-            {
-                return;
-            }
-
+            // Normal Attack
             if (Input.GetKeyDown(KeyCode.Z))
             {
-                StartCoroutine(OnAttack(1));
+                runningCoroutine = StartCoroutine(OnAttack(1));
             }
+            // Skill 1
             else if (Input.GetKeyDown(KeyCode.X))
             {
-                if (stamina - 100 < 0)
-                {
-                    if (!gameManager.isChangingTextColor)
-                    {
-                        StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                    }
-                    return;
-                }
-                StartCoroutine(OnAttack(2));
+                runningCoroutine = StartCoroutine(OnAttack(2));
             }
+            // Skill 2
             else if (Input.GetKeyDown(KeyCode.C))
             {
-                if (is1StepJumping)
+                runningCoroutine = StartCoroutine(OnAttack(3));
+            }
+        }
+        else
+        {
+            // Dash
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                if (runningCoroutine != null)
                 {
-                    return;
+                    StopCoroutine(runningCoroutine);
                 }
+                runningCoroutine = StartCoroutine(Dash(Vector2.left));
+            }
 
-                if (stamina - 75 < 0)
+            if (Input.GetKeyDown(KeyCode.D))
+            {
+                if (runningCoroutine != null)
                 {
-                    if (!gameManager.isChangingTextColor)
-                    {
-                        StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                    }
-                    return;
+                    StopCoroutine(runningCoroutine);
                 }
-                StartCoroutine(OnAttack(3));
+                runningCoroutine = StartCoroutine(Dash(Vector2.right));
+            }
+
+            // Special Skill 1
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                runningCoroutine = StartCoroutine(OnAttack(4));
+            }
+
+            // Special Skill 2
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                runningCoroutine = StartCoroutine(OnAttack(5));
             }
         }
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        // Attack Cancel
+        if (isAttackCanceled)
         {
-            // Dash
-            if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
+            isAttacking = false;
+            ignoreDamaged = false;
+            anim.SetBool("isAttacking_01", false);
+            anim.SetBool("isAttacking_02", false);
+            anim.SetBool("isAttacking_03", false);
+            anim.SetBool("isAttacking_04", false);
+            anim.SetBool("isAttacking_05", false);
+            foreach (BoxCollider2D collider in boxColliders)
             {
-                if (anim.GetBool("isDashing"))
-                {
-                    return;
-                }
-
-                if (stamina - 500 < 0)
-                {
-                    if (!gameManager.isChangingTextColor)
-                    {
-                        StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                    }
-                    return;
-                }
-
-                if (isAttacking)
-                {
-                    isAttacking = false;
-                    anim.SetBool("isAttacking_01", false);
-                    anim.SetBool("isAttacking_02", false);
-                    anim.SetBool("isAttacking_03", false);
-                    anim.SetBool("isAttacking_04", false);
-                    anim.SetBool("isAttacking_05", false);
-                    anim.SetBool("isAttacking_Down", false);
-                }
-
-                anim.SetBool("isMoving", false);
-                StartCoroutine(Dash());
-            }
-
-            // Special Attack
-            if (Input.GetKeyDown(KeyCode.X))
-            {
-                if (isAttacking || isDamaged)
-                {
-                    return;
-                }
-
-                if (stamina - 250 < 0)
-                {
-                    if (!gameManager.isChangingTextColor)
-                    {
-                        StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                    }
-                    return;
-                }
-
-                StartCoroutine(OnAttack(4));
-            }
-
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                if (is1StepJumping || isAttacking || isDamaged)
-                {
-                    return;
-                }
-
-                if (stamina - 250 < 0)
-                {
-                    if (!gameManager.isChangingTextColor)
-                    {
-                        StartCoroutine(gameManager.ChangeTextColor(gameManager.GetText("stamina"), new Color(1, 0, 0)));
-                    }
-                    return;
-                }
-
-                StartCoroutine(OnAttack(5));
+                collider.offset = new Vector2(0, 0.004f);
             }
         }
 
@@ -388,34 +253,7 @@ public class Player1 : MonoBehaviour
         pos.y = Mathf.Clamp(pos.y, 0, 1);
         rigid.position = Camera.main.ViewportToWorldPoint(pos);
 
-        /*
         // Debug.DrawRay(rigid.position, new Vector3(0, -20, 0), new Color(0, 1, 0));
-        RaycastHit2D rayHit = Physics2D.Raycast(rigid.position, Vector2.down, 20);
-        if (rayHit.collider != null)
-        {
-            if (rayHit.collider.gameObject != gameObject && rayHit.collider.CompareTag("Player"))
-            {
-                victimPos = new Vector2(rayHit.collider.transform.position.x, rayHit.collider.transform.position.y);
-            }
-            else
-            {
-                victimPos = new Vector2();
-            }
-
-            if (rayHit.collider.CompareTag("Platform"))
-            {
-                cellTilePos = grid.WorldToCell(new Vector3(transform.position.x, transform.position.y));
-                if (tilemap.HasTile(new Vector3Int(cellTilePos.x, -3, 0)))
-                {
-                    worldTilePos = grid.CellToWorld(new Vector3Int(cellTilePos.x, -3, 0));
-                }
-            }
-            else if (rayHit.collider.CompareTag("HighPlatform"))
-            {
-                worldTilePos = new Vector3(rayHit.collider.transform.position.x, rayHit.collider.transform.position.y);
-            }
-        }
-        */
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -438,38 +276,7 @@ public class Player1 : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ladder"))
         {
-            if (transform.position.y < 0.55f)
-            {
-                isCanClimb = true;
-            }
-            else
-            {
-                isCanClimb = false;
-            }
-
-            if (Input.GetKey(KeyCode.W))
-            {
-                if (isCanClimb)
-                {
-                    isClimbing = true;
-                    maxSpeed = 1.75f;
-                    rigid.gravityScale = 0;
-                    GetComponents<BoxCollider2D>()[0].enabled = false;
-                    transform.Translate(transform.up * climbSpeed * Time.deltaTime);
-                }
-            }
-
-            if (Input.GetKey(KeyCode.S))
-            {
-                if (isCanClimb)
-                {
-                    isClimbing = true;
-                    maxSpeed = 1.75f;
-                    rigid.gravityScale = 0;
-                    GetComponents<BoxCollider2D>()[0].enabled = false;
-                    transform.Translate(transform.up * climbSpeed * -1 * Time.deltaTime);
-                }
-            }
+            OnClimb();
         }
     }
 
@@ -477,14 +284,7 @@ public class Player1 : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ladder"))
         {
-            isCanClimb = false;
-            if (isClimbing)
-            {
-                isClimbing = false;
-                maxSpeed = 8.25f;
-                GetComponents<BoxCollider2D>()[0].enabled = true;
-                rigid.gravityScale = 5f;
-            }
+            OffClimb();
         }
     }
 
@@ -492,6 +292,14 @@ public class Player1 : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemy"))
         {
+            if (anim.GetBool("isDashing"))
+            {
+                attackRange = new Vector2(1.1f, 2.58f);
+                attackPoint.localPosition = new Vector3(0, 0.005f);
+                float intensityY = rigid.velocity.y > 7.6f ? rigid.velocity.y * 1.8f : 0;
+                AttackTo(attackPoint.position, attackRange, 20, 0, intensityY);
+                return;
+            }
             OnDamaged(50, 7.5f, 0.4f, collision.transform.position);
         }
     }
@@ -502,14 +310,93 @@ public class Player1 : MonoBehaviour
         Gizmos.DrawWireCube(attackPoint.position, attackRange);
     }
 
-    private void UseStamina(int value)
+    private bool CheckCanMove()
+    {
+        if (!(isAttacking || isDamaged || isDead || anim.GetBool("isDashing") || Input.GetKey(KeyCode.LeftShift)))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private bool CheckCanJump()
+    {
+        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private void OnClimb()
+    {
+        if (transform.position.y < 0.55f)
+        {
+            isCanClimb = true;
+        }
+        else
+        {
+            isCanClimb = false;
+        }
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            if (isCanClimb)
+            {
+                isClimbing = true;
+                maxSpeed = 3.5f;
+                rigid.drag = 10f;
+                rigid.gravityScale = 0;
+                GetComponents<BoxCollider2D>()[0].enabled = false;
+                transform.Translate(transform.up * climbSpeed * Time.deltaTime);
+            }
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+            if (isCanClimb)
+            {
+                isClimbing = true;
+                maxSpeed = 3.5f;
+                rigid.drag = 10f;
+                rigid.gravityScale = 0;
+                GetComponents<BoxCollider2D>()[0].enabled = false;
+                transform.Translate(transform.up * climbSpeed * -1 * Time.deltaTime);
+            }
+        }
+    }
+
+    private void OffClimb()
+    {
+        isCanClimb = false;
+        if (isClimbing)
+        {
+            isClimbing = false;
+            maxSpeed = 8.25f;
+            GetComponents<BoxCollider2D>()[0].enabled = true;
+            rigid.gravityScale = 5f;
+            rigid.drag = 1f;
+        }
+    }
+
+    private bool UseStamina(int value)
     {
         if (stamina - value < 0)
         {
-            stamina = 0;
-            return;
+            ui.HighlightTextColor(ui.staminaText, new Color(1, 0, 0));
+            return false;
         }
-        stamina -= value;
+        else
+        {
+            stamina -= value;
+            return true;
+        }
     }
 
     private void SetHealth(int value)
@@ -517,16 +404,26 @@ public class Player1 : MonoBehaviour
         health += value;
     }
 
-    private IEnumerator Dash()
+    private IEnumerator Dash(Vector2 dirc)
     {
-        UseStamina(500);
+        if (anim.GetBool("isDashing") || !UseStamina(500))
+        {
+            yield break;
+        }
+
+        if (isAttacking)
+        {
+            isAttackCanceled = true;
+        }
+        anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", true);
+
         if (is1StepJumping)
         {
             rigid.gravityScale = 0f;
             rigid.velocity = new Vector2(rigid.velocity.normalized.x, rigid.velocity.normalized.y);
         }
-
+        transform.rotation = dirc.x < 0 ? Quaternion.Euler(0, 180, 0) : Quaternion.Euler(0, 0, 0);
         yield return new WaitForSeconds(0.25f);
         if (Input.GetKey(KeyCode.W))
         {
@@ -536,42 +433,61 @@ public class Player1 : MonoBehaviour
         {
             rigid.AddForce(Vector2.down * 13.5f, ForceMode2D.Impulse);
         }
-        rigid.AddForce((transform.rotation.y == 0 ? Vector2.right : Vector2.left) * 35f, ForceMode2D.Impulse);
+        rigid.AddForce(dirc * 32.5f, ForceMode2D.Impulse);
         yield return new WaitForSeconds(0.25f);
         rigid.gravityScale = 5f;
         rigid.velocity = new Vector2(rigid.velocity.normalized.x * 1.75f, rigid.velocity.y);
         yield return new WaitForSeconds(0.2f);
         anim.SetBool("isDashing", false);
+        isAttackCanceled = false;
     }
 
     private IEnumerator OnAttack(int type)
     {
-        isAttacking = true;
+        if (isAttacking || isDamaged || isAttackCanceled)
+        {
+            yield break;
+        }
+
         if (type == 1)
         {
+            isAttacking = true;
             anim.SetBool("isAttacking_01", true);
             attackPoint.localPosition = new Vector3(0.19f, 0.05f);
             attackRange = new Vector2(4.8f, 3.9f);
             yield return new WaitForSeconds(0.6f);
-            AttackTo(attackPoint.position, attackRange, 10, 0, 0);
+            AttackTo(attackPoint.position, attackRange, 20, 0, 0);
         }
         if (type == 2)
         {
-            UseStamina(100);
+            if (!UseStamina(100))
+            {
+                yield break;
+            }
+            isAttacking = true;
             anim.SetBool("isAttacking_02", true);
             attackPoint.localPosition = new Vector3(0.23f, 0.028f);
             attackRange = new Vector2(2.8f, 1.6f);
             yield return new WaitForSeconds(0.4f);
-            AttackTo(attackPoint.position, attackRange, 10, 8.4f, 1.2f);
+            AttackTo(attackPoint.position, attackRange, 20, 8.4f, 1.2f);
             Instantiate(bullet, bulletPos.position, transform.rotation);
             yield return new WaitForSeconds(1f);
-            AttackTo(attackPoint.position, attackRange, 10, 8.4f, 1.2f);
+            AttackTo(attackPoint.position, attackRange, 20, 8.4f, 1.2f);
             Instantiate(bullet, bulletPos.position, transform.rotation);
         }
         if (type == 3)
         {
+            if (health <= 20)
+            {
+                ui.HighlightTextColor(ui.hpText, new Color(1, 0, 0));
+                yield break;
+            }
+            if (is1StepJumping || !UseStamina(75))
+            {
+                yield break;
+            }
             SetHealth(-20);
-            UseStamina(75);
+            isAttacking = true;
             anim.SetBool("isAttacking_03", true);
             attackPoint.localPosition = new Vector3(0, 0);
             attackRange = new Vector2(5.8f, 2.7f);
@@ -581,7 +497,7 @@ public class Player1 : MonoBehaviour
             {
                 collider.offset = new Vector2(0, 0.32f);
             }
-            AttackTo(attackPoint.position, attackRange, 75, 3.8f, 23.4f);
+            AttackTo(attackPoint.position, attackRange, 150, 3.8f, 23.4f);
             yield return new WaitForSeconds(0.9f);
             rigid.gravityScale = 5f;
             foreach (BoxCollider2D collider in boxColliders)
@@ -591,28 +507,32 @@ public class Player1 : MonoBehaviour
         }
         if (type == 4)
         {
-            UseStamina(250);
+            if (!UseStamina(250))
+            {
+                yield break;
+            }
+            isAttacking = true;
             anim.SetBool("isAttacking_04", true);
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             attackRange = new Vector2(5.8f, 1.6f);
             yield return new WaitForSeconds(0.9f);
             ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
-            AttackTo(attackPoint.position, attackRange, 15, 0, 8.2f);
+            AttackTo(attackPoint.position, attackRange, 30, 0, 8.2f);
             yield return new WaitForSeconds(0.2f);
             ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
-            AttackTo(attackPoint.position, attackRange, 35, 0, 16.4f);
+            AttackTo(attackPoint.position, attackRange, 70, 0, 16.4f);
             yield return new WaitForSeconds(1.1f);
             ignoreDamaged = true;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
             yield return new WaitForSeconds(0.1f);
-            AttackTo(attackPoint.position, attackRange, 15, 0, 9.8f);
+            AttackTo(attackPoint.position, attackRange, 30, 0, 9.8f);
             yield return new WaitForSeconds(0.2f);
             ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             yield return new WaitForSeconds(0.1f);
-            AttackTo(attackPoint.position, attackRange, 35, 0, 18.6f);
+            AttackTo(attackPoint.position, attackRange, 70, 0, 18.6f);
             yield return new WaitForSeconds(0.8f);
             ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
@@ -620,7 +540,11 @@ public class Player1 : MonoBehaviour
         }
         if (type == 5)
         {
-            UseStamina(250);
+            if (is1StepJumping || !UseStamina(250))
+            {
+                yield break;
+            }
+            isAttacking = true;
             anim.SetBool("isAttacking_05", true);
             ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
@@ -632,7 +556,7 @@ public class Player1 : MonoBehaviour
             attackPoint.localPosition = new Vector3(0.21f, 0.32f);
             attackRange = new Vector2(3.6f, 9.1f);
             yield return new WaitForSeconds(0.6f);
-            AttackTo(attackPoint.position, attackRange, 120, 1.7f, 26.3f);
+            AttackTo(attackPoint.position, attackRange, 240, 1.7f, 26.3f);
             yield return new WaitForSeconds(1f);
             ignoreDamaged = true;
             yield return new WaitForSeconds(0.3f);
@@ -646,7 +570,7 @@ public class Player1 : MonoBehaviour
 
     private void AttackTo(Vector3 pos, Vector2 range, int damage, float intensityX, float intensityY)
     {
-        if (isDamaged)
+        if (isDamaged || isAttackCanceled)
         {
             return;
         }
@@ -661,9 +585,9 @@ public class Player1 : MonoBehaviour
         }
 
         float shakePower = 0.4f;
-        if (intensityX + intensityY != 0)
+        if (intensityX / 32.5f + intensityY / 32.5f > 0)
         {
-            shakePower = intensityX / 35 + intensityY / 35;
+            shakePower = intensityX / 32.5f + intensityY / 32.5f;
         }
         float shakeTime = shakePower > 0.7f ? 0.1f : 0.05f;
         gameCamera.VibrateForTime(shakePower, shakeTime);
@@ -671,21 +595,24 @@ public class Player1 : MonoBehaviour
 
     public void OnDamaged(int damage, float intensity, float time, Vector2 targetPos)
     {
-        if (isDamaged || isDead || ignoreDamaged)
+        if (isDamaged || ignoreDamaged)
         {
+            return;
+        }
+
+        if (damage >= health)
+        {
+            Death();
             return;
         }
 
         StopAllCoroutines();
 
         isDamaged = true;
-        isAttacking = false;
-
-        anim.SetBool("isAttacking_01", false);
-        anim.SetBool("isAttacking_02", false);
-        anim.SetBool("isAttacking_03", false);
-        anim.SetBool("isAttacking_04", false);
-        anim.SetBool("isAttacking_05", false);
+        if (isAttacking)
+        {
+            isAttackCanceled = true;
+        }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
 
@@ -701,11 +628,16 @@ public class Player1 : MonoBehaviour
     public void OffDamaged()
     {
         isDamaged = false;
+        if (isAttackCanceled)
+        {
+            isAttackCanceled = false;
+        }
         anim.ResetTrigger("doDamaged");
     }
 
     private void Death()
     {
+        health = 0;
         isDead = true;
         StopAllCoroutines();
 
@@ -721,5 +653,7 @@ public class Player1 : MonoBehaviour
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
         anim.SetTrigger("doDead");
+
+        gameCamera.VibrateForTime(0.3f, 0.4f);
     }
 }

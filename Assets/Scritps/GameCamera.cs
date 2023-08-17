@@ -48,8 +48,8 @@ public class GameCamera : MonoBehaviour
 
     public void VibrateForTime(float power, float time)
     {
+        isCanCameraShake = true;
         shakePower = power;
         shakeTime = time;
-        isCanCameraShake = true;
     }
 }
