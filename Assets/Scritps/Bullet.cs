@@ -27,10 +27,10 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        DestroyBullet();
         if (collision.gameObject.CompareTag("Enemy"))
         {
             collision.GetComponent<Enemy>().OnDamaged(60, 1.7f, 0, transform.position);
-            DestroyBullet();
         }
     }
 
