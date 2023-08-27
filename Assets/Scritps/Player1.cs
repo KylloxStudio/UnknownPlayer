@@ -7,6 +7,7 @@ public class Player1 : MonoBehaviour
     private BoxCollider2D[] boxColliders;
     private Rigidbody2D rigid;
     private Animator anim;
+    private GameManager gameManager;
     private UIManager ui;
     private GameCamera gameCamera;
 
@@ -42,6 +43,7 @@ public class Player1 : MonoBehaviour
         boxColliders = GetComponents<BoxCollider2D>();
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        gameManager = GameManager.Instance;
         ui = GameManager.GetUIManager();
         gameCamera = GameManager.GetCamera();
 
@@ -192,19 +194,11 @@ public class Player1 : MonoBehaviour
             // Dash
             if (Input.GetKeyDown(KeyCode.A))
             {
-                if (runningCoroutine != null)
-                {
-                    StopCoroutine(runningCoroutine);
-                }
                 runningCoroutine = StartCoroutine(Dash(Vector2.left));
             }
 
             if (Input.GetKeyDown(KeyCode.D))
             {
-                if (runningCoroutine != null)
-                {
-                    StopCoroutine(runningCoroutine);
-                }
                 runningCoroutine = StartCoroutine(Dash(Vector2.right));
             }
 
@@ -290,7 +284,7 @@ public class Player1 : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Player") && collision.gameObject != gameObject)
         {
             if (anim.GetBool("isDashing"))
             {
@@ -389,7 +383,7 @@ public class Player1 : MonoBehaviour
     {
         if (stamina - value < 0)
         {
-            ui.HighlightTextColor(ui.staminaText, new Color(1, 0, 0));
+            ui.HighlightTextColor(gameManager.staminaText, new Color(1, 0, 0));
             return false;
         }
         else
@@ -479,7 +473,7 @@ public class Player1 : MonoBehaviour
         {
             if (health <= 20)
             {
-                ui.HighlightTextColor(ui.hpText, new Color(1, 0, 0));
+                ui.HighlightTextColor(gameManager.hpText, new Color(1, 0, 0));
                 yield break;
             }
             if (is1StepJumping || !UseStamina(75))
@@ -578,9 +572,9 @@ public class Player1 : MonoBehaviour
         Collider2D[] collider2Ds = Physics2D.OverlapBoxAll(pos, range, 0);
         foreach (Collider2D collider in collider2Ds)
         {
-            if (collider.gameObject.CompareTag("Enemy"))
+            if (collider.gameObject.CompareTag("Player") && collider.gameObject != gameObject)
             {
-                collider.GetComponent<Enemy>().OnDamaged(damage, intensityX, intensityY, transform.position);
+                collider.GetComponent<Player1>().OnDamaged(damage, intensityX, intensityY, transform.position);
             }
         }
 

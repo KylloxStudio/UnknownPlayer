@@ -5,91 +5,20 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
-    private Player1 player1;
-    private Enemy enemy;
-    public Slider hpBar;
-    public Text hpText;
-    public Slider staminaBar;
-    public Text staminaText;
-    public Text enemyHpText;
 
-    private float maxHp;
-    private float curHp;
-    private float maxStamina;
-    private float curStamina;
-    private float imsiHp;
-    private float imsiStamina;
-    private float enemyMaxHp;
-    private float enemyCurHp;
     private bool isChangingTextColor;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         Instance = this;
-        player1 = GameManager.GetPlayer1();
-        enemy = GameManager.GetEnemy();
-
-        maxHp = player1.health;
-        curHp = player1.health;
-        maxStamina = player1.stamina;
-        curStamina = player1.stamina;
-        enemyMaxHp = enemy.hp;
-        enemyCurHp = enemy.hp;
-
-        hpBar.value = curHp / maxHp;
-        hpText.text = curHp + " / " + maxHp;
-        staminaBar.value = curStamina / maxStamina;
-        staminaText.text = curStamina + " / " + maxStamina;
-
-        enemyHpText.text = "Enemy HP: " + enemyCurHp + " / " + enemyMaxHp;
-
         SetResolution();
+        DontDestroyOnLoad(gameObject);
     }
 
     // Update is called once per frame
     void Update()
     {
-        HandleHp();
-        HandleStamina();
-        enemyCurHp = enemy.hp;
-        enemyHpText.text = "Enemy HP: " + enemyCurHp + " / " + enemyMaxHp;
-    }
-
-    private void HandleHp()
-    {
-        curHp = player1.health;
-        hpText.text = curHp + " / " + maxHp;
-        if (curHp > 0)
-        {
-            imsiHp = curHp / maxHp;
-            hpBar.value = Mathf.Lerp(hpBar.value, imsiHp, Time.deltaTime * 10);
-        }
-        else
-        {
-            Image hpFill = hpBar.transform.GetChild(2).GetChild(0).gameObject.GetComponent<Image>();
-            hpFill.color = new Color(1, 0, 0);
-            hpBar.direction = Slider.Direction.RightToLeft;
-            hpBar.value = Mathf.Lerp(hpBar.value, 1, Time.deltaTime * 10);
-        }
-    }
-
-    private void HandleStamina()
-    {
-        curStamina = player1.stamina;
-        imsiStamina = curStamina / maxStamina;
-        staminaText.text = curStamina + " / " + maxStamina;
-        staminaBar.value = Mathf.Lerp(staminaBar.value, imsiStamina, Time.deltaTime * 10);
-    }
-
-    public void HighlightTextColor(Text text, Color color)
-    {
-        StartCoroutine(ChangeTextColor(text, color, true));
-    }
-
-    public void ChangeTextColor(Text text, Color color)
-    {
-        StartCoroutine(ChangeTextColor(text, color, false));
     }
 
     private IEnumerator ChangeTextColor(Text text, Color color, bool highlight)
@@ -116,6 +45,124 @@ public class UIManager : MonoBehaviour
         {
             text.color = color;
         }
+    }
+
+    private IEnumerator Typing(Text text, string msg)
+    {
+        yield return new WaitForSeconds(0.8f);
+        for (int i = 0; i <= msg.Length; i++)
+        {
+            text.text = msg.Substring(0, i);
+            yield return new WaitForSeconds(0.15f);
+        }
+    }
+
+    private IEnumerator Fade(Image image, float time, bool fadein)
+    {
+        Color color = image.color;
+        float percent = 0f;
+        while (percent < 1)
+        {
+            percent += Time.deltaTime / time;
+            if (fadein) color.a = Mathf.Lerp(1f, 0f, percent);
+            else color.a = Mathf.Lerp(0f, 1f, percent);
+            image.color = color;
+            yield return null;
+        }
+        image.gameObject.SetActive(false);
+    }
+
+    private IEnumerator Fade(Text text, float time, bool fadein)
+    {
+        Color color = text.color;
+        float percent = 0f;
+        while (percent < 1)
+        {
+            percent += Time.deltaTime / time;
+            if (fadein) color.a = Mathf.Lerp(0f, 1f, percent);
+            else color.a = Mathf.Lerp(1f, 0f, percent);
+            text.color = color;
+            yield return null;
+        }
+    }
+
+    private IEnumerator BlinkText(Text text, float speed, bool fade)
+    {
+        string tx = text.text;
+        if (fade)
+        {
+            while (true)
+            {
+                Color color = text.color;
+                float percent = 0f;
+                while (percent < 1)
+                {
+                    percent += Time.deltaTime / speed;
+                    color.a = Mathf.Lerp(0f, 1f, percent);
+                    text.color = color;
+                    yield return null;
+                }
+                percent = 0f;
+                while (percent < 1)
+                {
+                    percent += Time.deltaTime / speed;
+                    color.a = Mathf.Lerp(1f, 0f, percent);
+                    text.color = color;
+                    yield return null;
+                }
+                yield return null;
+            }
+        }
+        else
+        {
+            while (true)
+            {
+                text.text = "";
+                yield return new WaitForSeconds(speed);
+                text.text = tx;
+                yield return new WaitForSeconds(speed);
+            }
+        }
+    }
+
+    public void HighlightTextColor(Text text, Color color)
+    {
+        text.StartCoroutine(ChangeTextColor(text, color, true));
+    }
+
+    public void ChangeTextColor(Text text, Color color)
+    {
+        text.StartCoroutine(ChangeTextColor(text, color, false));
+    }
+
+    public void TypingEffect(Text text, string msg)
+    {
+        text.StartCoroutine(Typing(text, msg));
+    }
+
+    public void FadeIn(Image image, float time)
+    {
+        image.StartCoroutine(Fade(image, time, true));
+    }
+
+    public void FadeOut(Image image, float time)
+    {
+        image.StartCoroutine(Fade(image, time, false));
+    }
+
+    public void FadeIn(Text text, float time)
+    {
+        text.StartCoroutine(Fade(text, time, true));
+    }
+
+    public void FadeOut(Text text, float time)
+    {
+        text.StartCoroutine(Fade(text, time, false));
+    }
+
+    public void BlinkEffect(Text text, float speed, bool fade)
+    {
+        text.StartCoroutine(BlinkText(text, speed, fade));
     }
 
     public void SetResolution()
