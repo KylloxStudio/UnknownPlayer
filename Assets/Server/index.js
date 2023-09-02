@@ -18,33 +18,41 @@ io.use((socket, next) => {
     }
 });
 
-let player = 0;
 io.on('connection', socket => {
-  console.log('connected.');
+	const ip = socket.request.connection.remoteAddress.replace("::ffff:", "");
+  const id = socket.id;
+  console.log('Connected.');
 
   socket.on('join', (data) => {
-    player += 1;
-    console.log('A Player Entered. count: ', player);
-    socket.emit('enter', player);
+    console.log('A Player Entered. ID:', id);
+    socket.emit('join', id);
+  });
+
+  socket.on('waiting', (data) => {
+    console.log('Waiting for Other Player...');
+    socket.emit('waiting');
   });
 
   socket.on('match', (data) => {
-    player += 1;
     console.log('Matched.');
     socket.emit('match', player);
   });
 
   socket.on('quit', (data) => {
-    if (player == 2) {
-      socket.emit('quitgame');
-    }
-    player -= 1;
-    console.log('A Player Quit. count: ', player);
-    socket.emit('quit');
+    console.log('A Player Quit. ID:', id);
+    socket.emit('quit', id);
   });
 
-  socket.on('gameLoaded', (data) => {
-    console.log('Game Start.');
+  socket.on('gameLoad', (data) => {
+    console.log('Game Start!');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected:', ip, id);
+  });
+
+  socket.on('error', (error) => {
+    console.error(error);
   });
 });
 
