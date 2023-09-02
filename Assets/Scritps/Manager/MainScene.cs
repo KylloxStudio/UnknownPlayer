@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -13,14 +11,17 @@ public class MainScene : MonoBehaviour
     private bool isActiveStartMsg;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         title.text = "";
         UIManager.Instance.TypingEffect(title, "Unknown Player");
+
+        if (!NetworkManager.Instance.socket.Connected && !NetworkManager.Instance.isReconneting)
+            NetworkManager.Instance.socket.Connect();
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (!isActiveTitle && title.text == "Unknown Player")
         {
@@ -38,7 +39,7 @@ public class MainScene : MonoBehaviour
         {
             if (Input.anyKeyDown)
             {
-                NetworkManager.Instance.socket.Emit("enter");
+                NetworkManager.Instance.socket.Emit("join");
                 SceneManager.LoadScene("LobbyScene");
             }
         }

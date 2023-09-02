@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -7,13 +5,13 @@ public class Bullet : MonoBehaviour
     public float speed;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         Invoke("DestroyBullet", 0.5f);
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (transform.rotation.y == 0)
         {

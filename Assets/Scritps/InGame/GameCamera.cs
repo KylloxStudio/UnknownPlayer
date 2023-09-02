@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GameCamera : MonoBehaviour
@@ -13,7 +11,7 @@ public class GameCamera : MonoBehaviour
     public Vector2 offset;
     public Vector3 initialPosition;
 
-    void Start()
+    private void Start()
     {
         smoothSpeed = 3f;
         shakePower = 0f;
@@ -24,7 +22,7 @@ public class GameCamera : MonoBehaviour
         initialPosition = transform.position;
     }
 
-    void Update()
+    private void Update()
     {
         if (isCanCameraShake)
         {
@@ -42,7 +40,7 @@ public class GameCamera : MonoBehaviour
         }
     }
 
-    void LateUpdate()
+    private void LateUpdate()
     {
     }
 

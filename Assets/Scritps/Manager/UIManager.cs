@@ -9,15 +9,23 @@ public class UIManager : MonoBehaviour
     private bool isChangingTextColor;
 
     // Start is called before the first frame update
-    void Awake()
+    private void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
         SetResolution();
-        DontDestroyOnLoad(gameObject);
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
     }
 
