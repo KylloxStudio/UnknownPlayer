@@ -16,7 +16,7 @@ public class MainScene : MonoBehaviour
         title.text = "";
         UIManager.Instance.TypingEffect(title, "Unknown Player");
 
-        if (!NetworkManager.Instance.socket.Connected && !NetworkManager.Instance.isReconneting)
+        if (!NetworkManager.Instance.socket.Connected)
             NetworkManager.Instance.socket.Connect();
     }
 
@@ -39,6 +39,11 @@ public class MainScene : MonoBehaviour
         {
             if (Input.anyKeyDown)
             {
+                if (!NetworkManager.Instance.socket.Connected)
+                {
+                    return;
+                }
+
                 NetworkManager.Instance.socket.Emit("join");
                 SceneManager.LoadScene("LobbyScene");
             }

@@ -43,7 +43,7 @@ public class Player2 : MonoBehaviour
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         gameManager = GameManager.Instance;
-        ui = GameManager.GetUIManager();
+        ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
 
         is1StepJumping = false;

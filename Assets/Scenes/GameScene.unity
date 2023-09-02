@@ -4925,13 +4925,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxSpeed: 0
   jumpPower: 0
+  climbSpeed: 0
+  health: 0
   stamina: 0
   is1StepJumping: 0
   is2StepJumping: 0
+  isMoving: 0
+  isAttacking: 0
+  isAttackCanceled: 0
+  isClimbing: 0
   isCanJump: 0
   isCanMove: 0
-  health: 0
-  platformPosition: {x: 0, y: 0}
+  isCanClimb: 0
+  isDamaged: 0
+  isDead: 0
+  ignoreDamaged: 0
+  attackPoint: {fileID: 0}
+  attackRange: {x: 0, y: 0}
+  bullet: {fileID: 0}
+  bulletPos: {fileID: 0}
 --- !u!61 &1962264615
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5026,16 +5038,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player1: {fileID: 575116635}
-  enemy: {fileID: 0}
+  player2: {fileID: 1962264614}
   grid: {fileID: 440733960}
   tilemap: {fileID: 1840356150}
   gameCamera: {fileID: 519420030}
-  ui: {fileID: 0}
   hpBar: {fileID: 668334637}
   hpText: {fileID: 1704709740}
   staminaBar: {fileID: 126636415}
   staminaText: {fileID: 1305763657}
   enemyHpText: {fileID: 1840516648}
+  maxHp: 0
+  curHp: 0
+  maxStamina: 0
+  curStamina: 0
+  imsiHp: 0
+  imsiStamina: 0
+  oppoMaxHp: 0
+  oppoCurHp: 0
 --- !u!4 &2025936004
 Transform:
   m_ObjectHideFlags: 0

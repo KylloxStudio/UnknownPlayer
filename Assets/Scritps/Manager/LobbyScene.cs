@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class LobbyScene : MonoBehaviour
 {
@@ -10,11 +11,13 @@ public class LobbyScene : MonoBehaviour
     {
         fadePanel.gameObject.SetActive(true);
         UIManager.Instance.FadeIn(fadePanel, 1.5f);
-        NetworkManager.Instance.EmitWaiting();
+        StartCoroutine(NetworkManager.Instance.EmitWaiting());
     }
 
     // Update is called once per frame
     private void Update()
     {
+        if (NetworkManager.Instance.isMatched)
+            SceneManager.LoadScene("GameScene");
     }
 }

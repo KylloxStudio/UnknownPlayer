@@ -1,8 +1,9 @@
 using SocketIOClient;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using Newtonsoft.Json.Linq;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -10,15 +11,14 @@ public class NetworkManager : MonoBehaviour
     public SocketIOUnity socket;
 
     [SerializeField]
-    private Player1 player1;
+    private string playerId;
 
-    [SerializeField]
-    private Player2 player2;
-
-    [SerializeField]
-    private List<string> playerList;
+    public bool isPlayer1;
+    public bool isPlayer2;
 
     public bool isReconneting;
+    public bool isMatched;
+    public bool isGameLoaded;
 
     // Start is called before the first frame update
     private void Awake()
@@ -33,7 +33,7 @@ public class NetworkManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        var uri = new Uri("http://192.168.55.247:11250");
+        var uri = new Uri("http://34.64.112.23:11250");
         socket = new SocketIOUnity(uri, new SocketIOOptions
         {
             Query = new Dictionary<string, string>
@@ -47,7 +47,6 @@ public class NetworkManager : MonoBehaviour
     private void Start()
     {
         isReconneting = false;
-        playerList = new List<string>();
 
         socket.OnConnected += OnConnected;
         socket.OnPing += OnPing;
@@ -56,7 +55,9 @@ public class NetworkManager : MonoBehaviour
         socket.OnReconnectAttempt += OnReconnect;
 
         socket.On("join", OnJoin);
+        socket.On("waiting", OnWaiting);
         socket.On("match", OnMatch);
+        socket.On("gameLoad", OnGameLoad);
         socket.On("quit", OnQuit);
         socket.On("opponent", GetOpponentData);
     }
@@ -64,7 +65,23 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-
+        if (isGameLoaded)
+        {
+            JObject json = new JObject();
+            if (isPlayer1)
+            {
+                json.Add("is1StepJumping", GameManager.Instance.player1.is1StepJumping);
+                json.Add("is2StepJumping", GameManager.Instance.player1.is2StepJumping);
+                json.Add("isAttacking", GameManager.Instance.player1.isAttacking);
+            }
+            else if (isPlayer2)
+            {
+                json.Add("is1StepJumping", GameManager.Instance.player2.is1StepJumping);
+                json.Add("is2StepJumping", GameManager.Instance.player2.is2StepJumping);
+                json.Add("isAttacking", GameManager.Instance.player2.isAttacking);
+            }
+            socket.Emit("opponent", json);
+        }
     }
 
     private void OnApplicationQuit()
@@ -83,12 +100,12 @@ public class NetworkManager : MonoBehaviour
 
     public void OnPing(object sender, EventArgs e)
     {
-        Debug.Log("Ping");
+        //Debug.Log("Ping");
     }
 
     public void OnPong(object sender, TimeSpan e)
     {
-        Debug.Log("Pong: " + e.TotalMilliseconds);
+        //Debug.Log("Pong: " + e.TotalMilliseconds);
     }
 
     public void OnDisconnected(object sender, string e)
@@ -107,45 +124,53 @@ public class NetworkManager : MonoBehaviour
 
     public void OnJoin(SocketIOResponse res)
     {
-        string id = res.GetValue<string>();
-        if (playerList.Contains(id))
-            return;
-
-        playerList.Add(id);
+        playerId = res.GetValue<string>();
     }
 
-    public void EmitWaiting()
+    public IEnumerator EmitWaiting()
     {
-        socket.Emit("waiting");
+        yield return new WaitUntil(() => playerId != null);
+        socket.Emit("waiting", playerId);
     }
 
     public void OnWaiting(SocketIOResponse res)
     {
-        if (playerList.Count >= 2)
-        {
-            socket.Emit("match");
-        }
+        string[] ids = res.GetValue<string[]>();
+        Debug.Log(ids.Length);
+
+        if (ids.Length < 2)
+            return;
+
+        if (ids[0] == playerId)
+            isPlayer1 = true;
+        else if (ids[1] == playerId)
+            isPlayer2 = true;
+
+        socket.Emit("match");
     }
 
     public void OnMatch(SocketIOResponse res)
     {
-        SceneManager.LoadScene("GameScene");
+        isMatched = true;
     }
 
     public void OnQuit(SocketIOResponse res)
     {
-        playerList.Remove(res.GetValue<string>());
-    }
-
-    public void GetOpponentData(SocketIOResponse res)
-    {
-        UnityThread.executeInUpdate(() =>
-        {
-        });
+        playerId = null;
     }
 
     public void EmitGameLoad()
     {
-        socket.Emit("gameLoad");
+        socket.Emit("gameLoad", playerId);
+    }
+
+    public void OnGameLoad(SocketIOResponse res)
+    {
+        isGameLoaded = true;
+    }
+
+    public void GetOpponentData(SocketIOResponse res)
+    {
+
     }
 }

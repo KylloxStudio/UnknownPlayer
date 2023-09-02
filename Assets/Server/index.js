@@ -18,36 +18,49 @@ io.use((socket, next) => {
     }
 });
 
+let players = [];
 io.on('connection', socket => {
 	const ip = socket.request.connection.remoteAddress.replace("::ffff:", "");
   const id = socket.id;
-  console.log('Connected.');
+  console.log('Connected.', ip, id);
 
   socket.on('join', (data) => {
+    if (players.indexOf(id) == -1) players.push(id);
     console.log('A Player Entered. ID:', id);
     socket.emit('join', id);
   });
 
   socket.on('waiting', (data) => {
-    console.log('Waiting for Other Player...');
-    socket.emit('waiting');
+    console.log('Waiting for Other Player...', data);
+    socket.interval = setInterval(() => {
+      socket.emit('waiting', players);
+    }, 1000);
   });
 
   socket.on('match', (data) => {
+    clearInterval(socket.interval);
     console.log('Matched.');
-    socket.emit('match', player);
+    socket.emit('match');
   });
 
   socket.on('quit', (data) => {
+    players.splice(players.findIndex(e => e == id), 1);
     console.log('A Player Quit. ID:', id);
     socket.emit('quit', id);
   });
 
   socket.on('gameLoad', (data) => {
-    console.log('Game Start!');
+    console.log('Game Start!', data);
+    socket.emit("gameLoad");
+  });
+
+  socket.on('opponent', (data) => {
+    console.log(data);
+    socket.emit("opponent", json);
   });
 
   socket.on('disconnect', () => {
+    players.splice(players.findIndex(e => e == id), 1);
     console.log('Disconnected:', ip, id);
   });
 
