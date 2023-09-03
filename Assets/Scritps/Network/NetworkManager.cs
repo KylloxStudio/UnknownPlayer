@@ -68,18 +68,9 @@ public class NetworkManager : MonoBehaviour
         if (isGameLoaded)
         {
             JObject json = new JObject();
-            if (isPlayer1)
-            {
-                json.Add("is1StepJumping", GameManager.Instance.player1.is1StepJumping);
-                json.Add("is2StepJumping", GameManager.Instance.player1.is2StepJumping);
-                json.Add("isAttacking", GameManager.Instance.player1.isAttacking);
-            }
-            else if (isPlayer2)
-            {
-                json.Add("is1StepJumping", GameManager.Instance.player2.is1StepJumping);
-                json.Add("is2StepJumping", GameManager.Instance.player2.is2StepJumping);
-                json.Add("isAttacking", GameManager.Instance.player2.isAttacking);
-            }
+            json.Add("is1StepJumping", PlayerController.Instance.is1StepJumping);
+            json.Add("is2StepJumping", PlayerController.Instance.is2StepJumping);
+            json.Add("isAttacking", PlayerController.Instance.isAttacking);
             socket.Emit("opponent", json);
         }
     }

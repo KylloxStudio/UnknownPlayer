@@ -5,8 +5,7 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    public Player1 player1;
-    public Player2 player2;
+    public PlayerController playerController;
     public Grid grid;
     public Tilemap tilemap;
     public GameCamera gameCamera;
@@ -25,20 +24,20 @@ public class GameManager : MonoBehaviour
     public float oppoMaxHp;
     public float oppoCurHp;
 
-    // Start is called before the first frame update
     private void Awake()
     {
         Instance = this;
     }
 
+    // Start is called before the first frame update
     private void Start()
     {
         NetworkManager.Instance.EmitGameLoad();
 
-        maxHp = player1.health;
-        curHp = player1.health;
-        maxStamina = player1.stamina;
-        curStamina = player1.stamina;
+        maxHp = playerController.health;
+        curHp = playerController.health;
+        maxStamina = playerController.stamina;
+        curStamina = playerController.stamina;
 
         hpBar.value = curHp / maxHp;
         hpText.text = curHp + " / " + maxHp;
@@ -55,7 +54,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleHp()
     {
-        curHp = player1.health;
+        curHp = playerController.health;
         hpText.text = curHp + " / " + maxHp;
         if (curHp > 0)
         {
@@ -73,7 +72,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleStamina()
     {
-        curStamina = player1.stamina;
+        curStamina = playerController.stamina;
         imsiStamina = curStamina / maxStamina;
         staminaText.text = curStamina + " / " + maxStamina;
         staminaBar.value = Mathf.Lerp(staminaBar.value, imsiStamina, Time.deltaTime * 10);

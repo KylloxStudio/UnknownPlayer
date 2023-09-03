@@ -10,25 +10,11 @@ public class Player1 : MonoBehaviour
     private UIManager ui;
     private GameCamera gameCamera;
 
-    public float maxSpeed;
-    public float jumpPower;
-    public float climbSpeed;
+    private PlayerController controller;
+
     public int health;
     public int stamina;
-    public bool is1StepJumping;
-    public bool is2StepJumping;
-    public bool isMoving;
-    public bool isAttacking;
-    public bool isAttackCanceled;
-    public bool isClimbing;
-    public bool isCanJump;
-    public bool isCanMove;
-    public bool isCanClimb;
-    public bool isDamaged;
-    public bool isDead;
-    public bool ignoreDamaged;
 
-    [SerializeField]
     private Coroutine runningCoroutine;
 
     public Transform attackPoint;
@@ -46,16 +32,10 @@ public class Player1 : MonoBehaviour
         ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
 
-        is1StepJumping = false;
-        is2StepJumping = false;
-        isAttacking = false;
-        isAttackCanceled = false;
-        isClimbing = false;
-        isCanJump = true;
-        isCanMove = true;
-        isCanClimb = false;
-        isDamaged = false;
-        isDead = false;
+        controller = PlayerController.Instance;
+
+        health = 1000;
+        stamina = 5000;
 
         runningCoroutine = null;
     }
@@ -65,108 +45,39 @@ public class Player1 : MonoBehaviour
         // Animations
         if (anim != null)
         {
-            // Walking Animation
-            if (Mathf.Abs(rigid.velocity.x) > 0.3f)
-            {
-                anim.SetBool("isMoving", true);
-            }
-            else
-            {
-                anim.SetBool("isMoving", false);
-            }
-
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_01") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                isAttacking = false;
+                controller.isAttacking = false;
                 anim.SetBool("isAttacking_01", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_02") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                isAttacking = false;
+                controller.isAttacking = false;
                 anim.SetBool("isAttacking_02", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_03") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                isAttacking = false;
+                controller.isAttacking = false;
                 anim.SetBool("isAttacking_03", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_04") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                isAttacking = false;
+                controller.isAttacking = false;
                 anim.SetBool("isAttacking_04", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_05") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                isAttacking = false;
+                controller.isAttacking = false;
                 anim.SetBool("isAttacking_05", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Death") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
                 Destroy(gameObject);
-            }
-        }
-
-        // Check Can Jump
-        isCanJump = CheckCanJump();
-
-        // Jump
-        if (isCanJump && Input.GetKeyDown(KeyCode.W))
-        {
-            if (is2StepJumping)
-            {
-                return;
-            }
-
-            if (is1StepJumping)
-            {
-                is2StepJumping = true;
-            }
-
-            rigid.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
-            is1StepJumping = true;
-        }
-
-        // Check Can Move
-        isCanMove = CheckCanMove();
-
-        // Move
-        if (isCanMove)
-        {
-            if (Input.GetKey(KeyCode.A))
-            {
-                rigid.AddForce(Vector2.left * 1.1f, ForceMode2D.Impulse);
-            }
-
-            if (Input.GetKey(KeyCode.D))
-            {
-                rigid.AddForce(Vector2.right * 1.1f, ForceMode2D.Impulse);
-            }
-
-            if (rigid.velocity.x > maxSpeed) // Right Max Speed
-            {
-                rigid.velocity = new Vector2(maxSpeed, rigid.velocity.y);
-            }
-            else if (rigid.velocity.x < maxSpeed * (-1)) // Left Max Speed
-            {
-                rigid.velocity = new Vector2(maxSpeed * (-1), rigid.velocity.y);
-            }
-        }
-
-        // Player Direction
-        if (!(isDamaged || isDead || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
-        {
-            if (Input.GetKey(KeyCode.A))
-            {
-                transform.rotation = Quaternion.Euler(0, 180, 0);
-            }
-            else if (Input.GetKey(KeyCode.D))
-            {
-                transform.rotation = Quaternion.Euler(0, 0, 0);
             }
         }
 
@@ -215,10 +126,10 @@ public class Player1 : MonoBehaviour
         }
 
         // Attack Cancel
-        if (isAttackCanceled)
+        if (controller.isAttackCanceled)
         {
-            isAttacking = false;
-            ignoreDamaged = false;
+            controller.isAttacking = false;
+            controller.ignoreDamaged = false;
             anim.SetBool("isAttacking_01", false);
             anim.SetBool("isAttacking_02", false);
             anim.SetBool("isAttacking_03", false);
@@ -231,9 +142,9 @@ public class Player1 : MonoBehaviour
         }
 
         // Death
-        if (health <= 0 && !isDead)
+        if (health <= 0 && !controller.isDead)
         {
-            Death();
+            controller.Death();
         }
     }
 
@@ -247,38 +158,6 @@ public class Player1 : MonoBehaviour
         rigid.position = Camera.main.ViewportToWorldPoint(pos);
 
         // Debug.DrawRay(rigid.position, new Vector3(0, -20, 0), new Color(0, 1, 0));
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (rigid.velocity.y < 0)
-        {
-            if (is1StepJumping)
-            {
-                is1StepJumping = false;
-            }
-
-            if (is2StepJumping)
-            {
-                is2StepJumping = false;
-            }
-        }
-    }
-
-    private void OnTriggerStay2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ladder"))
-        {
-            OnClimb();
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ladder"))
-        {
-            OffClimb();
-        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -303,82 +182,12 @@ public class Player1 : MonoBehaviour
         Gizmos.DrawWireCube(attackPoint.position, attackRange);
     }
 
-    private bool CheckCanMove()
+    public void SetHealth(int value)
     {
-        if (!(isAttacking || isDamaged || isDead || anim.GetBool("isDashing") || Input.GetKey(KeyCode.LeftShift)))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        health += value;
     }
 
-    private bool CheckCanJump()
-    {
-        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    private void OnClimb()
-    {
-        if (transform.position.y < 0.55f)
-        {
-            isCanClimb = true;
-        }
-        else
-        {
-            isCanClimb = false;
-        }
-
-        if (Input.GetKey(KeyCode.W))
-        {
-            if (isCanClimb)
-            {
-                isClimbing = true;
-                maxSpeed = 3.5f;
-                rigid.drag = 10f;
-                rigid.gravityScale = 0;
-                GetComponents<BoxCollider2D>()[0].enabled = false;
-                transform.Translate(transform.up * climbSpeed * Time.deltaTime);
-            }
-        }
-
-        if (Input.GetKey(KeyCode.S))
-        {
-            if (isCanClimb)
-            {
-                isClimbing = true;
-                maxSpeed = 3.5f;
-                rigid.drag = 10f;
-                rigid.gravityScale = 0;
-                GetComponents<BoxCollider2D>()[0].enabled = false;
-                transform.Translate(transform.up * climbSpeed * -1 * Time.deltaTime);
-            }
-        }
-    }
-
-    private void OffClimb()
-    {
-        isCanClimb = false;
-        if (isClimbing)
-        {
-            isClimbing = false;
-            maxSpeed = 8.25f;
-            GetComponents<BoxCollider2D>()[0].enabled = true;
-            rigid.gravityScale = 5f;
-            rigid.drag = 1f;
-        }
-    }
-
-    private bool UseStamina(int value)
+    public bool UseStamina(int value)
     {
         if (stamina - value < 0)
         {
@@ -392,26 +201,21 @@ public class Player1 : MonoBehaviour
         }
     }
 
-    private void SetHealth(int value)
-    {
-        health += value;
-    }
-
-    private IEnumerator Dash(Vector2 dirc)
+    public IEnumerator Dash(Vector2 dirc)
     {
         if (anim.GetBool("isDashing") || !UseStamina(500))
         {
             yield break;
         }
 
-        if (isAttacking)
+        if (controller.isAttacking)
         {
-            isAttackCanceled = true;
+            controller.isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", true);
 
-        if (is1StepJumping)
+        if (controller.is1StepJumping)
         {
             rigid.gravityScale = 0f;
             rigid.velocity = new Vector2(rigid.velocity.normalized.x, rigid.velocity.normalized.y);
@@ -432,19 +236,19 @@ public class Player1 : MonoBehaviour
         rigid.velocity = new Vector2(rigid.velocity.normalized.x * 1.75f, rigid.velocity.y);
         yield return new WaitForSeconds(0.2f);
         anim.SetBool("isDashing", false);
-        isAttackCanceled = false;
+        controller.isAttackCanceled = false;
     }
 
-    private IEnumerator OnAttack(int type)
+    public IEnumerator OnAttack(int type)
     {
-        if (isAttacking || isDamaged || isAttackCanceled)
+        if (controller.isAttacking || controller.isDamaged || controller.isAttackCanceled)
         {
             yield break;
         }
 
         if (type == 1)
         {
-            isAttacking = true;
+            controller.isAttacking = true;
             anim.SetBool("isAttacking_01", true);
             attackPoint.localPosition = new Vector3(0.19f, 0.05f);
             attackRange = new Vector2(4.8f, 3.9f);
@@ -457,7 +261,7 @@ public class Player1 : MonoBehaviour
             {
                 yield break;
             }
-            isAttacking = true;
+            controller.isAttacking = true;
             anim.SetBool("isAttacking_02", true);
             attackPoint.localPosition = new Vector3(0.23f, 0.028f);
             attackRange = new Vector2(2.8f, 1.6f);
@@ -475,12 +279,12 @@ public class Player1 : MonoBehaviour
                 ui.HighlightTextColor(gameManager.hpText, new Color(1, 0, 0));
                 yield break;
             }
-            if (is1StepJumping || !UseStamina(75))
+            if (controller.is1StepJumping || !UseStamina(75))
             {
                 yield break;
             }
             SetHealth(-20);
-            isAttacking = true;
+            controller.isAttacking = true;
             anim.SetBool("isAttacking_03", true);
             attackPoint.localPosition = new Vector3(0, 0);
             attackRange = new Vector2(5.8f, 2.7f);
@@ -504,44 +308,44 @@ public class Player1 : MonoBehaviour
             {
                 yield break;
             }
-            isAttacking = true;
+            controller.isAttacking = true;
             anim.SetBool("isAttacking_04", true);
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             attackRange = new Vector2(5.8f, 1.6f);
             yield return new WaitForSeconds(0.9f);
-            ignoreDamaged = true;
+            controller.ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
             AttackTo(attackPoint.position, attackRange, 30, 0, 8.2f);
             yield return new WaitForSeconds(0.2f);
-            ignoreDamaged = false;
+            controller.ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
             AttackTo(attackPoint.position, attackRange, 70, 0, 16.4f);
             yield return new WaitForSeconds(1.1f);
-            ignoreDamaged = true;
+            controller.ignoreDamaged = true;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
             yield return new WaitForSeconds(0.1f);
             AttackTo(attackPoint.position, attackRange, 30, 0, 9.8f);
             yield return new WaitForSeconds(0.2f);
-            ignoreDamaged = false;
+            controller.ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             yield return new WaitForSeconds(0.1f);
             AttackTo(attackPoint.position, attackRange, 70, 0, 18.6f);
             yield return new WaitForSeconds(0.8f);
-            ignoreDamaged = true;
+            controller.ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
-            ignoreDamaged = false;
+            controller.ignoreDamaged = false;
         }
         if (type == 5)
         {
-            if (is1StepJumping || !UseStamina(250))
+            if (controller.is1StepJumping || !UseStamina(250))
             {
                 yield break;
             }
-            isAttacking = true;
+            controller.isAttacking = true;
             anim.SetBool("isAttacking_05", true);
-            ignoreDamaged = true;
+            controller.ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
-            ignoreDamaged = false;
+            controller.ignoreDamaged = false;
             foreach (BoxCollider2D collider in boxColliders)
             {
                 collider.offset = new Vector2(-0.25f, 0.004f);
@@ -551,9 +355,9 @@ public class Player1 : MonoBehaviour
             yield return new WaitForSeconds(0.6f);
             AttackTo(attackPoint.position, attackRange, 240, 1.7f, 26.3f);
             yield return new WaitForSeconds(1f);
-            ignoreDamaged = true;
+            controller.ignoreDamaged = true;
             yield return new WaitForSeconds(0.3f);
-            ignoreDamaged = false;
+            controller.ignoreDamaged = false;
             foreach (BoxCollider2D collider in boxColliders)
             {
                 collider.offset = new Vector2(0, 0.004f);
@@ -563,7 +367,7 @@ public class Player1 : MonoBehaviour
 
     private void AttackTo(Vector3 pos, Vector2 range, int damage, float intensityX, float intensityY)
     {
-        if (isDamaged || isAttackCanceled)
+        if (controller.isDamaged || controller.isAttackCanceled)
         {
             return;
         }
@@ -573,7 +377,7 @@ public class Player1 : MonoBehaviour
         {
             if (collider.gameObject.CompareTag("Player") && collider.gameObject != gameObject)
             {
-                collider.GetComponent<Player1>().OnDamaged(damage, intensityX, intensityY, transform.position);
+                collider.GetComponent<Player2>().OnDamaged(damage, intensityX, intensityY, transform.position);
             }
         }
 
@@ -588,23 +392,23 @@ public class Player1 : MonoBehaviour
 
     public void OnDamaged(int damage, float intensity, float time, Vector2 targetPos)
     {
-        if (isDamaged || ignoreDamaged)
+        if (controller.isDamaged || controller.ignoreDamaged)
         {
             return;
         }
 
         if (damage >= health)
         {
-            Death();
+            controller.Death();
             return;
         }
 
         StopAllCoroutines();
 
-        isDamaged = true;
-        if (isAttacking)
+        controller.isDamaged = true;
+        if (controller.isAttacking)
         {
-            isAttackCanceled = true;
+            controller.isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
@@ -620,33 +424,11 @@ public class Player1 : MonoBehaviour
 
     public void OffDamaged()
     {
-        isDamaged = false;
-        if (isAttackCanceled)
+        controller.isDamaged = false;
+        if (controller.isAttackCanceled)
         {
-            isAttackCanceled = false;
+            controller.isAttackCanceled = false;
         }
         anim.ResetTrigger("doDamaged");
-    }
-
-    private void Death()
-    {
-        health = 0;
-        isDead = true;
-        StopAllCoroutines();
-
-        isClimbing = false;
-        isAttacking = false;
-        isCanClimb = false;
-
-        anim.SetBool("isAttacking_01", false);
-        anim.SetBool("isAttacking_02", false);
-        anim.SetBool("isAttacking_03", false);
-        anim.SetBool("isAttacking_04", false);
-        anim.SetBool("isAttacking_05", false);
-        anim.SetBool("isMoving", false);
-        anim.SetBool("isDashing", false);
-        anim.SetTrigger("doDead");
-
-        gameCamera.VibrateForTime(0.3f, 0.4f);
     }
 }

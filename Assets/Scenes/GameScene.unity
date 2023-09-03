@@ -1449,6 +1449,7 @@ GameObject:
   - component: {fileID: 575116638}
   - component: {fileID: 575116636}
   - component: {fileID: 575116635}
+  - component: {fileID: 575116640}
   m_Layer: 2
   m_Name: Player1
   m_TagString: Player
@@ -1558,23 +1559,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a25529f61b503b44b97e66aee0f642c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxSpeed: 8.25
-  jumpPower: 15
-  climbSpeed: 7.25
   health: 1000
   stamina: 5000
-  is1StepJumping: 0
-  is2StepJumping: 0
-  isMoving: 0
-  isAttacking: 0
-  isAttackCanceled: 0
-  isClimbing: 0
-  isCanJump: 0
-  isCanMove: 0
-  isCanClimb: 0
-  isDamaged: 0
-  isDead: 0
-  ignoreDamaged: 0
   attackPoint: {fileID: 440772301}
   attackRange: {x: 1.1, y: 2.58}
   bullet: {fileID: 2841499481057257803, guid: dace77fbfb1e1c0439a10e81d83e523f, type: 3}
@@ -1715,6 +1701,39 @@ PlatformEffector2D:
   m_UseSideFriction: 0
   m_UseSideBounce: 0
   m_SideArc: 1
+--- !u!114 &575116640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 575116631}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17cb348bea688d54cb7d4130ac2e2b3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player1: {fileID: 0}
+  player2: {fileID: 0}
+  health: 0
+  stamina: 0
+  maxSpeed: 0
+  jumpPower: 0
+  climbSpeed: 0
+  is1StepJumping: 0
+  is2StepJumping: 0
+  isMoving: 0
+  isAttacking: 0
+  isAttackCanceled: 0
+  isClimbing: 0
+  isCanJump: 0
+  isCanMove: 0
+  isCanClimb: 0
+  isDamaged: 0
+  isDead: 0
+  ignoreDamaged: 0
+  oldPosition: {x: 0, y: 0}
+  curPosition: {x: 0, y: 0}
 --- !u!1 &587573681
 GameObject:
   m_ObjectHideFlags: 0
@@ -4744,6 +4763,7 @@ GameObject:
   - component: {fileID: 1962264615}
   - component: {fileID: 1962264611}
   - component: {fileID: 1962264614}
+  - component: {fileID: 1962264617}
   m_Layer: 2
   m_Name: Player2
   m_TagString: Player
@@ -5008,6 +5028,39 @@ PlatformEffector2D:
   m_UseSideFriction: 0
   m_UseSideBounce: 0
   m_SideArc: 1
+--- !u!114 &1962264617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962264608}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17cb348bea688d54cb7d4130ac2e2b3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player1: {fileID: 0}
+  player2: {fileID: 0}
+  health: 0
+  stamina: 0
+  maxSpeed: 0
+  jumpPower: 0
+  climbSpeed: 0
+  is1StepJumping: 0
+  is2StepJumping: 0
+  isMoving: 0
+  isAttacking: 0
+  isAttackCanceled: 0
+  isClimbing: 0
+  isCanJump: 0
+  isCanMove: 0
+  isCanClimb: 0
+  isDamaged: 0
+  isDead: 0
+  ignoreDamaged: 0
+  oldPosition: {x: 0, y: 0}
+  curPosition: {x: 0, y: 0}
 --- !u!1 &2025936002
 GameObject:
   m_ObjectHideFlags: 0
@@ -5037,8 +5090,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 909b9288e7b6af24a892af88fdc720a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player1: {fileID: 575116635}
-  player2: {fileID: 1962264614}
+  playerController: {fileID: 0}
   grid: {fileID: 440733960}
   tilemap: {fileID: 1840356150}
   gameCamera: {fileID: 519420030}
