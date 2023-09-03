@@ -32,7 +32,7 @@ public class Player2 : MonoBehaviour
         ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
 
-        controller = PlayerController.Instance;
+        controller = GetComponent<PlayerController>();
 
         health = 1000;
         stamina = 5000;
@@ -42,6 +42,8 @@ public class Player2 : MonoBehaviour
 
     private void Update()
     {
+        GetPlayerData();
+
         // Animations
         if (anim != null)
         {
@@ -81,70 +83,73 @@ public class Player2 : MonoBehaviour
             }
         }
 
-        if (!Input.GetKey(KeyCode.LeftShift))
+        if (controller != null)
         {
-            // Normal Attack
-            if (Input.GetKeyDown(KeyCode.Z))
+            if (!Input.GetKey(KeyCode.LeftShift))
             {
-                runningCoroutine = StartCoroutine(OnAttack(1));
+                // Normal Attack
+                if (Input.GetKeyDown(KeyCode.Z))
+                {
+                    runningCoroutine = StartCoroutine(OnAttack(1));
+                }
+                // Skill 1
+                else if (Input.GetKeyDown(KeyCode.X))
+                {
+                    runningCoroutine = StartCoroutine(OnAttack(2));
+                }
+                // Skill 2
+                else if (Input.GetKeyDown(KeyCode.C))
+                {
+                    runningCoroutine = StartCoroutine(OnAttack(3));
+                }
             }
-            // Skill 1
-            else if (Input.GetKeyDown(KeyCode.X))
+            else
             {
-                runningCoroutine = StartCoroutine(OnAttack(2));
-            }
-            // Skill 2
-            else if (Input.GetKeyDown(KeyCode.C))
-            {
-                runningCoroutine = StartCoroutine(OnAttack(3));
-            }
-        }
-        else
-        {
-            // Dash
-            if (Input.GetKeyDown(KeyCode.A))
-            {
-                runningCoroutine = StartCoroutine(Dash(Vector2.left));
+                // Dash
+                if (Input.GetKeyDown(KeyCode.A))
+                {
+                    runningCoroutine = StartCoroutine(Dash(Vector2.left));
+                }
+
+                if (Input.GetKeyDown(KeyCode.D))
+                {
+                    runningCoroutine = StartCoroutine(Dash(Vector2.right));
+                }
+
+                // Special Skill 1
+                if (Input.GetKeyDown(KeyCode.X))
+                {
+                    runningCoroutine = StartCoroutine(OnAttack(4));
+                }
+
+                // Special Skill 2
+                if (Input.GetKeyDown(KeyCode.C))
+                {
+                    runningCoroutine = StartCoroutine(OnAttack(5));
+                }
             }
 
-            if (Input.GetKeyDown(KeyCode.D))
+            // Attack Cancel
+            if (controller.isAttackCanceled)
             {
-                runningCoroutine = StartCoroutine(Dash(Vector2.right));
+                controller.isAttacking = false;
+                controller.ignoreDamaged = false;
+                anim.SetBool("isAttacking_01", false);
+                anim.SetBool("isAttacking_02", false);
+                anim.SetBool("isAttacking_03", false);
+                anim.SetBool("isAttacking_04", false);
+                anim.SetBool("isAttacking_05", false);
+                foreach (BoxCollider2D collider in boxColliders)
+                {
+                    collider.offset = new Vector2(0, 0.004f);
+                }
             }
 
-            // Special Skill 1
-            if (Input.GetKeyDown(KeyCode.X))
+            // Death
+            if (health <= 0 && !controller.isDead)
             {
-                runningCoroutine = StartCoroutine(OnAttack(4));
+                controller.Death();
             }
-
-            // Special Skill 2
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                runningCoroutine = StartCoroutine(OnAttack(5));
-            }
-        }
-
-        // Attack Cancel
-        if (controller.isAttackCanceled)
-        {
-            controller.isAttacking = false;
-            controller.ignoreDamaged = false;
-            anim.SetBool("isAttacking_01", false);
-            anim.SetBool("isAttacking_02", false);
-            anim.SetBool("isAttacking_03", false);
-            anim.SetBool("isAttacking_04", false);
-            anim.SetBool("isAttacking_05", false);
-            foreach (BoxCollider2D collider in boxColliders)
-            {
-                collider.offset = new Vector2(0, 0.004f);
-            }
-        }
-
-        // Death
-        if (health <= 0 && !controller.isDead)
-        {
-            controller.Death();
         }
     }
 
@@ -180,6 +185,14 @@ public class Player2 : MonoBehaviour
     {
         Gizmos.color = Color.blue;
         Gizmos.DrawWireCube(attackPoint.position, attackRange);
+    }
+
+    private void GetPlayerData()
+    {
+        health = NetworkManager.Instance.player2Hp;
+        stamina = NetworkManager.Instance.player2Stamina;
+        transform.position = NetworkManager.Instance.player2Position;
+        transform.rotation = NetworkManager.Instance.player2Rotation;
     }
 
     public void SetHealth(int value)

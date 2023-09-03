@@ -10,8 +10,7 @@ public class NetworkManager : MonoBehaviour
     public static NetworkManager Instance;
     public SocketIOUnity socket;
 
-    [SerializeField]
-    private string playerId;
+    public string playerId;
 
     public bool isPlayer1;
     public bool isPlayer2;
@@ -19,6 +18,17 @@ public class NetworkManager : MonoBehaviour
     public bool isReconneting;
     public bool isMatched;
     public bool isGameLoaded;
+
+    public int player1Hp;
+    public int player2Hp;
+    public int player1Stamina;
+    public int player2Stamina;
+
+    public Vector3 player1Position;
+    public Vector3 player2Position;
+
+    public Quaternion player1Rotation;
+    public Quaternion player2Rotation;
 
     // Start is called before the first frame update
     private void Awake()
@@ -59,20 +69,13 @@ public class NetworkManager : MonoBehaviour
         socket.On("match", OnMatch);
         socket.On("gameLoad", OnGameLoad);
         socket.On("quit", OnQuit);
-        socket.On("opponent", GetOpponentData);
+        socket.On("statistics", OnStatistics);
+        socket.On("position", OnPosition);
     }
 
     // Update is called once per frame
     private void Update()
     {
-        if (isGameLoaded)
-        {
-            JObject json = new JObject();
-            json.Add("is1StepJumping", PlayerController.Instance.is1StepJumping);
-            json.Add("is2StepJumping", PlayerController.Instance.is2StepJumping);
-            json.Add("isAttacking", PlayerController.Instance.isAttacking);
-            socket.Emit("opponent", json);
-        }
     }
 
     private void OnApplicationQuit()
@@ -160,8 +163,41 @@ public class NetworkManager : MonoBehaviour
         isGameLoaded = true;
     }
 
-    public void GetOpponentData(SocketIOResponse res)
+    public void OnStatistics(SocketIOResponse res)
     {
+        JObject data = JObject.Parse(res.GetValue<string>());
+        int hp1 = data.GetValue("hp1").Value<int>();
+        int stamina1 = data.GetValue("stamina1").Value<int>();
+        int hp2 = data.GetValue("hp2").Value<int>();
+        int stamina2 = data.GetValue("stamina2").Value<int>();
 
+        player1Hp = hp1;
+        player1Stamina = stamina1;
+        player2Hp = hp2;
+        player2Stamina = stamina2;
+    }
+
+    public void OnPosition(SocketIOResponse res)
+    {
+        JObject data = JObject.Parse(res.GetValue<string>());
+        float x1 = data.GetValue("x1").Value<float>();
+        float y1 = data.GetValue("y1").Value<float>();
+        float x2 = data.GetValue("x2").Value<float>();
+        float y2 = data.GetValue("y2").Value<float>();
+
+        player1Position = new Vector3(x1, y1);
+        player2Position = new Vector3(x2, y2);
+    }
+
+    public void OnRotation(SocketIOResponse res)
+    {
+        JObject data = JObject.Parse(res.GetValue<string>());
+        float x1 = data.GetValue("x1").Value<float>();
+        float y1 = data.GetValue("y1").Value<float>();
+        float x2 = data.GetValue("x2").Value<float>();
+        float y2 = data.GetValue("y2").Value<float>();
+
+        player1Rotation = Quaternion.Euler(x1, y1, 0);
+        player2Rotation = Quaternion.Euler(x2, y2, 0);
     }
 }

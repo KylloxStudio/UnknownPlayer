@@ -946,6 +946,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 311606024}
   m_CullTransparentMesh: 1
+--- !u!1 &353918190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 353918191}
+  m_Layer: 2
+  m_Name: melee
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &353918191
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353918190}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -4.375, y: -0.056249976, z: 0}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1962264610}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &440733959
 GameObject:
   m_ObjectHideFlags: 0
@@ -1708,13 +1739,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 575116631}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17cb348bea688d54cb7d4130ac2e2b3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player1: {fileID: 0}
-  player2: {fileID: 0}
+  player1: {fileID: 575116635}
+  player2: {fileID: 1962264614}
   health: 0
   stamina: 0
   maxSpeed: 0
@@ -1732,8 +1763,8 @@ MonoBehaviour:
   isDamaged: 0
   isDead: 0
   ignoreDamaged: 0
-  oldPosition: {x: 0, y: 0}
-  curPosition: {x: 0, y: 0}
+  oldPosition: {x: 0, y: 0, z: 0}
+  curPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &587573681
 GameObject:
   m_ObjectHideFlags: 0
@@ -4835,7 +4866,8 @@ Transform:
   m_LocalPosition: {x: 17.5, y: -5, z: 0}
   m_LocalScale: {x: 8, y: 8, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 353918191}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &1962264611
@@ -4943,23 +4975,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb9b5c686bc7f094c96c37f92314e6d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxSpeed: 0
-  jumpPower: 0
-  climbSpeed: 0
   health: 0
   stamina: 0
-  is1StepJumping: 0
-  is2StepJumping: 0
-  isMoving: 0
-  isAttacking: 0
-  isAttackCanceled: 0
-  isClimbing: 0
-  isCanJump: 0
-  isCanMove: 0
-  isCanClimb: 0
-  isDamaged: 0
-  isDead: 0
-  ignoreDamaged: 0
   attackPoint: {fileID: 0}
   attackRange: {x: 0, y: 0}
   bullet: {fileID: 0}
@@ -5035,13 +5052,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1962264608}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17cb348bea688d54cb7d4130ac2e2b3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player1: {fileID: 0}
-  player2: {fileID: 0}
+  player1: {fileID: 575116635}
+  player2: {fileID: 1962264614}
   health: 0
   stamina: 0
   maxSpeed: 0
@@ -5059,8 +5076,8 @@ MonoBehaviour:
   isDamaged: 0
   isDead: 0
   ignoreDamaged: 0
-  oldPosition: {x: 0, y: 0}
-  curPosition: {x: 0, y: 0}
+  oldPosition: {x: 0, y: 0, z: 0}
+  curPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &2025936002
 GameObject:
   m_ObjectHideFlags: 0
@@ -5091,6 +5108,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerController: {fileID: 0}
+  player1: {fileID: 575116635}
+  player2: {fileID: 1962264614}
   grid: {fileID: 440733960}
   tilemap: {fileID: 1840356150}
   gameCamera: {fileID: 519420030}

@@ -39,7 +39,6 @@ io.on('connection', socket => {
 
   socket.on('match', (data) => {
     clearInterval(socket.interval);
-    console.log('Matched.');
     socket.emit('match');
   });
 
@@ -54,9 +53,16 @@ io.on('connection', socket => {
     socket.emit("gameLoad");
   });
 
-  socket.on('opponent', (data) => {
-    console.log(data);
-    socket.emit("opponent", json);
+  socket.on('statistics', (data) => {
+    socket.emit("statistics", data);
+  });
+
+  socket.on('position', (data) => {
+    socket.emit("position", data);
+  });
+
+  socket.on('rotation', (data) => {
+    socket.emit("rotation", data);
   });
 
   socket.on('disconnect', () => {

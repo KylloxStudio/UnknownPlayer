@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public PlayerController playerController;
+    public Player1 player1;
+    public Player2 player2;
     public Grid grid;
     public Tilemap tilemap;
     public GameCamera gameCamera;
@@ -33,6 +35,15 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         NetworkManager.Instance.EmitGameLoad();
+
+        if (NetworkManager.Instance.isPlayer1)
+        {
+            playerController = player1.GetComponent<PlayerController>();
+        }
+        else if (NetworkManager.Instance.isPlayer2)
+        {
+            playerController = player2.GetComponent<PlayerController>();
+        }
 
         maxHp = playerController.health;
         curHp = playerController.health;

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 public class PlayerController : MonoBehaviour
 {
@@ -13,7 +14,6 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rigid;
     private Animator anim;
-    private GameCamera gameCamera;
 
     public int health;
     public int stamina;
@@ -34,35 +34,34 @@ public class PlayerController : MonoBehaviour
     public bool isDead;
     public bool ignoreDamaged;
 
-    private Coroutine runningCoroutine;
-
     [SerializeField]
-    private Vector2 oldPosition;
+    private Vector3 oldPosition;
     [SerializeField]
-    private Vector2 curPosition;
+    private Vector3 curPosition;
 
     private void Awake()
     {
         Instance = this;
+
+        if (NetworkManager.Instance.isPlayer1)
+        {
+            Destroy(player2.gameObject.GetComponent<PlayerController>());
+        }
+        else if (NetworkManager.Instance.isPlayer2)
+        {
+            Destroy(player1.gameObject.GetComponent<PlayerController>());
+        }
+
+        SendStatistics();
+        SendPosition();
+        SendRotation();
     }
 
     // Start is called before the first frame update
     private void Start()
     {
-        if (NetworkManager.Instance.isPlayer1)
-        {
-            Destroy(player2.gameObject.GetComponent<PlayerController>());
-            player1.gameObject.GetComponent<PlayerController>().gameObject.SetActive(true);
-        }
-        else if (NetworkManager.Instance.isPlayer2)
-        {
-            Destroy(player1.gameObject.GetComponent<PlayerController>());
-            player2.gameObject.GetComponent<PlayerController>().gameObject.SetActive(true);
-        }
-
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        gameCamera = GameManager.GetCamera();
 
         maxSpeed = 8.25f;
         jumpPower = 15f;
@@ -79,13 +78,12 @@ public class PlayerController : MonoBehaviour
         isDamaged = false;
         isDead = false;
 
-        runningCoroutine = null;
-
         oldPosition = transform.position;
         curPosition = transform.position;
     }
 
-    private void FixedUpdate()
+    // Update is called once per frame
+    void Update()
     {
         // Move
         isCanMove = CheckCanMove();
@@ -128,11 +126,7 @@ public class PlayerController : MonoBehaviour
             rigid.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
             is1StepJumping = true;
         }
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
         // Walking Animation
         if (Mathf.Abs(rigid.velocity.x) > 0.3f)
         {
@@ -156,7 +150,9 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        SendStatistics();
         SendPosition();
+        SendRotation();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -284,12 +280,46 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
         anim.SetTrigger("doDead");
+    }
 
-        gameCamera.VibrateForTime(0.3f, 0.4f);
+    private void SendStatistics()
+    {
+        if (NetworkManager.Instance.isPlayer1)
+        {
+            health = player1.health;
+            stamina = player1.stamina;
+        }
+        else if (NetworkManager.Instance.isPlayer2)
+        {
+            health = player2.health;
+            stamina = player2.stamina;
+        }
+
+        JObject data = new JObject();
+        data.Add("hp1", player1.health);
+        data.Add("stamina1", player1.stamina);
+        data.Add("hp2", player2.health);
+        data.Add("stamina2", player2.stamina);
+        NetworkManager.Instance.socket.Emit("statistics", data.ToString());
     }
 
     private void SendPosition()
     {
+        JObject data = new JObject();
+        data.Add("x1", player1.transform.position.x);
+        data.Add("y1", player1.transform.position.y);
+        data.Add("x2", player2.transform.position.x);
+        data.Add("y2", player2.transform.position.y);
+        NetworkManager.Instance.socket.Emit("position", data.ToString());
+    }
 
+    private void SendRotation()
+    {
+        JObject data = new JObject();
+        data.Add("x1", player1.transform.rotation.x);
+        data.Add("y1", player1.transform.rotation.y);
+        data.Add("x2", player2.transform.rotation.x);
+        data.Add("y2", player2.transform.rotation.y);
+        NetworkManager.Instance.socket.Emit("rotation", data.ToString());
     }
 }
