@@ -431,7 +431,7 @@ public class Player1 : MonoBehaviour
         rigid.AddForce(new Vector2(dirc, 1) * intensity, ForceMode2D.Impulse);
 
         SetHealth(-damage);
-        anim.SetTrigger("doDamaged");
+        anim.SetBool("isDamaged", true);
         gameCamera.VibrateForTime(0.25f, 0.4f);
         Invoke("OffDamaged", time);
     }
@@ -443,7 +443,7 @@ public class Player1 : MonoBehaviour
         {
             isAttackCanceled = false;
         }
-        anim.ResetTrigger("doDamaged");
+        anim.SetBool("isDamaged", false);
     }
 
     public void Death()
@@ -463,6 +463,6 @@ public class Player1 : MonoBehaviour
         anim.SetBool("isAttacking_05", false);
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
-        anim.SetTrigger("doDead");
+        anim.SetBool("isDead", true);
     }
 }

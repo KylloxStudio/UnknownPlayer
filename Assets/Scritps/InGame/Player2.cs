@@ -51,6 +51,13 @@ public class Player2 : MonoBehaviour
         // Animations
         if (anim != null)
         {
+            // 경고 메세지 방지
+            anim.SetBool("isAttacking_01", anim.GetBool("isAttacking"));
+            anim.SetBool("isAttacking_02", anim.GetBool("isAttacking"));
+            anim.SetBool("isAttacking_03", anim.GetBool("isAttacking"));
+            anim.SetBool("isAttacking_04", anim.GetBool("isAttacking"));
+            anim.SetBool("isAttacking_05", anim.GetBool("isAttacking"));
+
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
                 isAttacking = false;
@@ -262,7 +269,7 @@ public class Player2 : MonoBehaviour
         rigid.AddForce(new Vector2(dirc, 1) * intensity, ForceMode2D.Impulse);
 
         SetHealth(-damage);
-        anim.SetTrigger("doDamaged");
+        anim.SetBool("isDamaged", true);
         gameCamera.VibrateForTime(0.25f, 0.4f);
         Invoke("OffDamaged", time);
     }
@@ -274,7 +281,7 @@ public class Player2 : MonoBehaviour
         {
             isAttackCanceled = false;
         }
-        anim.ResetTrigger("doDamaged");
+        anim.SetBool("isDamaged", false);
     }
 
     public void Death()
@@ -290,6 +297,6 @@ public class Player2 : MonoBehaviour
         anim.SetBool("isAttacking", false);
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
-        anim.SetTrigger("doDead");
+        anim.SetBool("isDead", true);
     }
 }

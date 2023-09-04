@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
@@ -103,7 +104,12 @@ public class GameManager : MonoBehaviour
             player2.stamina = NetworkManager.Instance.player2Stamina;
             player2.transform.position = NetworkManager.Instance.player2Position;
             player2.transform.rotation = NetworkManager.Instance.player2Rotation;
-            player2.anim = NetworkManager.Instance.player2Animation;
+            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player2Animations)
+            {
+                Debug.Log(item.Key);
+                Debug.Log(item.Value);
+                player2.anim.SetBool(item.Key, item.Value);
+            }
         }
         else if (NetworkManager.Instance.isPlayer2)
         {
@@ -111,7 +117,10 @@ public class GameManager : MonoBehaviour
             player1.stamina = NetworkManager.Instance.player1Stamina;
             player1.transform.position = NetworkManager.Instance.player1Position;
             player1.transform.rotation = NetworkManager.Instance.player1Rotation;
-            player1.anim = NetworkManager.Instance.player1Animation;
+            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player1Animations)
+            {
+                player1.anim.SetBool(item.Key, item.Value);
+            }
         }
     }
 

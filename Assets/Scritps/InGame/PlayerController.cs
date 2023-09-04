@@ -147,7 +147,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Player Direction
-        if (!(isDamaged || isDead || anim.GetBool("isAttacking") || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
+        if (!(isDamaged || isDead || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
         {
             if (Input.GetKey(KeyCode.A))
             {
@@ -214,7 +214,7 @@ public class PlayerController : MonoBehaviour
 
     private bool CheckCanJump()
     {
-        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking") || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
+        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
         {
             return true;
         }
@@ -353,13 +353,15 @@ public class PlayerController : MonoBehaviour
         data.Add("p1_isAttacking_03", player1.anim.GetBool("isAttacking_03"));
         data.Add("p1_isAttacking_04", player1.anim.GetBool("isAttacking_04"));
         data.Add("p1_isAttacking_05", player1.anim.GetBool("isAttacking_05"));
-        data.Add("p1_isDamaged", player1.isDamaged);
-        data.Add("p1_isDead", player1.isDead);
+        data.Add("p1_isDamaged", player1.anim.GetBool("isDamaged"));
+        data.Add("p1_isDead", player1.anim.GetBool("isDead"));
+
         data.Add("p2_isMoving", player2.anim.GetBool("isMoving"));
         data.Add("p2_isDashing", player2.anim.GetBool("isDashing"));
         data.Add("p2_isAttacking", player2.anim.GetBool("isAttacking"));
-        data.Add("p2_isDamaged", player2.isDamaged);
-        data.Add("p2_isDead", player2.isDead);
+        data.Add("p2_isDamaged", player2.anim.GetBool("isDamaged"));
+        data.Add("p2_isDead", player2.anim.GetBool("isDead"));
+
         NetworkManager.Instance.socket.Emit("animation", data.ToString());
     }
 }
