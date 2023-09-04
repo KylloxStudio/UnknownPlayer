@@ -5,7 +5,7 @@ public class Player1 : MonoBehaviour
 {
     private BoxCollider2D[] boxColliders;
     private Rigidbody2D rigid;
-    private Animator anim;
+    public Animator anim;
     private GameManager gameManager;
     private UIManager ui;
     private GameCamera gameCamera;
@@ -14,6 +14,12 @@ public class Player1 : MonoBehaviour
 
     public int health;
     public int stamina;
+
+    public bool isAttacking;
+    public bool isAttackCanceled;
+    public bool isDamaged;
+    public bool isDead;
+    public bool ignoreDamaged;
 
     private Coroutine runningCoroutine;
 
@@ -31,49 +37,52 @@ public class Player1 : MonoBehaviour
         gameManager = GameManager.Instance;
         ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
-
         controller = GetComponent<PlayerController>();
 
         health = 1000;
         stamina = 5000;
+
+        isAttacking = false;
+        isAttackCanceled = false;
+        isDamaged = false;
+        isDead = false;
+        ignoreDamaged = false;
 
         runningCoroutine = null;
     }
 
     private void Update()
     {
-        GetPlayerData();
-
         // Animations
         if (anim != null)
         {
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_01") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
+                isAttacking = false;
                 anim.SetBool("isAttacking_01", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_02") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
+                isAttacking = false;
                 anim.SetBool("isAttacking_02", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_03") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
+                isAttacking = false;
                 anim.SetBool("isAttacking_03", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_04") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
+                isAttacking = false;
                 anim.SetBool("isAttacking_04", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_05") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
+                isAttacking = false;
                 anim.SetBool("isAttacking_05", false);
             }
 
@@ -130,10 +139,10 @@ public class Player1 : MonoBehaviour
             }
 
             // Attack Cancel
-            if (controller.isAttackCanceled)
+            if (isAttackCanceled)
             {
-                controller.isAttacking = false;
-                controller.ignoreDamaged = false;
+                isAttacking = false;
+                ignoreDamaged = false;
                 anim.SetBool("isAttacking_01", false);
                 anim.SetBool("isAttacking_02", false);
                 anim.SetBool("isAttacking_03", false);
@@ -146,9 +155,9 @@ public class Player1 : MonoBehaviour
             }
 
             // Death
-            if (health <= 0 && !controller.isDead)
+            if (health <= 0 && !isDead)
             {
-                controller.Death();
+                Death();
             }
         }
     }
@@ -187,14 +196,6 @@ public class Player1 : MonoBehaviour
         Gizmos.DrawWireCube(attackPoint.position, attackRange);
     }
 
-    private void GetPlayerData()
-    {
-        health = NetworkManager.Instance.player1Hp;
-        stamina = NetworkManager.Instance.player1Stamina;
-        transform.position = NetworkManager.Instance.player1Position;
-        transform.rotation = NetworkManager.Instance.player1Rotation;
-    }
-
     public void SetHealth(int value)
     {
         health += value;
@@ -221,9 +222,9 @@ public class Player1 : MonoBehaviour
             yield break;
         }
 
-        if (controller.isAttacking)
+        if (isAttacking)
         {
-            controller.isAttackCanceled = true;
+            isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", true);
@@ -249,19 +250,19 @@ public class Player1 : MonoBehaviour
         rigid.velocity = new Vector2(rigid.velocity.normalized.x * 1.75f, rigid.velocity.y);
         yield return new WaitForSeconds(0.2f);
         anim.SetBool("isDashing", false);
-        controller.isAttackCanceled = false;
+        isAttackCanceled = false;
     }
 
     public IEnumerator OnAttack(int type)
     {
-        if (controller.isAttacking || controller.isDamaged || controller.isAttackCanceled)
+        if (isAttacking || isDamaged || isAttackCanceled)
         {
             yield break;
         }
 
         if (type == 1)
         {
-            controller.isAttacking = true;
+            isAttacking = true;
             anim.SetBool("isAttacking_01", true);
             attackPoint.localPosition = new Vector3(0.19f, 0.05f);
             attackRange = new Vector2(4.8f, 3.9f);
@@ -274,7 +275,7 @@ public class Player1 : MonoBehaviour
             {
                 yield break;
             }
-            controller.isAttacking = true;
+            isAttacking = true;
             anim.SetBool("isAttacking_02", true);
             attackPoint.localPosition = new Vector3(0.23f, 0.028f);
             attackRange = new Vector2(2.8f, 1.6f);
@@ -297,7 +298,7 @@ public class Player1 : MonoBehaviour
                 yield break;
             }
             SetHealth(-20);
-            controller.isAttacking = true;
+            isAttacking = true;
             anim.SetBool("isAttacking_03", true);
             attackPoint.localPosition = new Vector3(0, 0);
             attackRange = new Vector2(5.8f, 2.7f);
@@ -321,32 +322,32 @@ public class Player1 : MonoBehaviour
             {
                 yield break;
             }
-            controller.isAttacking = true;
+            isAttacking = true;
             anim.SetBool("isAttacking_04", true);
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             attackRange = new Vector2(5.8f, 1.6f);
             yield return new WaitForSeconds(0.9f);
-            controller.ignoreDamaged = true;
+            ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
             AttackTo(attackPoint.position, attackRange, 30, 0, 8.2f);
             yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
+            ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
             AttackTo(attackPoint.position, attackRange, 70, 0, 16.4f);
             yield return new WaitForSeconds(1.1f);
-            controller.ignoreDamaged = true;
+            ignoreDamaged = true;
             attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
             yield return new WaitForSeconds(0.1f);
             AttackTo(attackPoint.position, attackRange, 30, 0, 9.8f);
             yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
+            ignoreDamaged = false;
             attackPoint.localPosition = new Vector3(0.15f, 0.015f);
             yield return new WaitForSeconds(0.1f);
             AttackTo(attackPoint.position, attackRange, 70, 0, 18.6f);
             yield return new WaitForSeconds(0.8f);
-            controller.ignoreDamaged = true;
+            ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
+            ignoreDamaged = false;
         }
         if (type == 5)
         {
@@ -354,11 +355,11 @@ public class Player1 : MonoBehaviour
             {
                 yield break;
             }
-            controller.isAttacking = true;
+            isAttacking = true;
             anim.SetBool("isAttacking_05", true);
-            controller.ignoreDamaged = true;
+            ignoreDamaged = true;
             yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
+            ignoreDamaged = false;
             foreach (BoxCollider2D collider in boxColliders)
             {
                 collider.offset = new Vector2(-0.25f, 0.004f);
@@ -368,9 +369,9 @@ public class Player1 : MonoBehaviour
             yield return new WaitForSeconds(0.6f);
             AttackTo(attackPoint.position, attackRange, 240, 1.7f, 26.3f);
             yield return new WaitForSeconds(1f);
-            controller.ignoreDamaged = true;
+            ignoreDamaged = true;
             yield return new WaitForSeconds(0.3f);
-            controller.ignoreDamaged = false;
+            ignoreDamaged = false;
             foreach (BoxCollider2D collider in boxColliders)
             {
                 collider.offset = new Vector2(0, 0.004f);
@@ -380,7 +381,7 @@ public class Player1 : MonoBehaviour
 
     private void AttackTo(Vector3 pos, Vector2 range, int damage, float intensityX, float intensityY)
     {
-        if (controller.isDamaged || controller.isAttackCanceled)
+        if (isDamaged || isAttackCanceled)
         {
             return;
         }
@@ -405,23 +406,23 @@ public class Player1 : MonoBehaviour
 
     public void OnDamaged(int damage, float intensity, float time, Vector2 targetPos)
     {
-        if (controller.isDamaged || controller.ignoreDamaged)
+        if (isDamaged || ignoreDamaged)
         {
             return;
         }
 
         if (damage >= health)
         {
-            controller.Death();
+            Death();
             return;
         }
 
         StopAllCoroutines();
 
-        controller.isDamaged = true;
-        if (controller.isAttacking)
+        isDamaged = true;
+        if (isAttacking)
         {
-            controller.isAttackCanceled = true;
+            isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
@@ -437,11 +438,31 @@ public class Player1 : MonoBehaviour
 
     public void OffDamaged()
     {
-        controller.isDamaged = false;
-        if (controller.isAttackCanceled)
+        isDamaged = false;
+        if (isAttackCanceled)
         {
-            controller.isAttackCanceled = false;
+            isAttackCanceled = false;
         }
         anim.ResetTrigger("doDamaged");
+    }
+
+    public void Death()
+    {
+        health = 0;
+        isDead = true;
+        StopAllCoroutines();
+
+        isAttacking = false;
+        controller.isClimbing = false;
+        controller.isCanClimb = false;
+
+        anim.SetBool("isAttacking_01", false);
+        anim.SetBool("isAttacking_02", false);
+        anim.SetBool("isAttacking_03", false);
+        anim.SetBool("isAttacking_04", false);
+        anim.SetBool("isAttacking_05", false);
+        anim.SetBool("isMoving", false);
+        anim.SetBool("isDashing", false);
+        anim.SetTrigger("doDead");
     }
 }

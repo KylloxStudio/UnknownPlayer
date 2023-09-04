@@ -30,6 +30,9 @@ public class NetworkManager : MonoBehaviour
     public Quaternion player1Rotation;
     public Quaternion player2Rotation;
 
+    public Animator player1Animation;
+    public Animator player2Animation;
+
     // Start is called before the first frame update
     private void Awake()
     {
@@ -71,6 +74,8 @@ public class NetworkManager : MonoBehaviour
         socket.On("quit", OnQuit);
         socket.On("statistics", OnStatistics);
         socket.On("position", OnPosition);
+        socket.On("rotation", OnRotation);
+        socket.On("animation", OnAnimation);
     }
 
     // Update is called once per frame
@@ -130,8 +135,6 @@ public class NetworkManager : MonoBehaviour
     public void OnWaiting(SocketIOResponse res)
     {
         string[] ids = res.GetValue<string[]>();
-        Debug.Log(ids.Length);
-
         if (ids.Length < 2)
             return;
 
@@ -192,12 +195,34 @@ public class NetworkManager : MonoBehaviour
     public void OnRotation(SocketIOResponse res)
     {
         JObject data = JObject.Parse(res.GetValue<string>());
-        float x1 = data.GetValue("x1").Value<float>();
         float y1 = data.GetValue("y1").Value<float>();
-        float x2 = data.GetValue("x2").Value<float>();
         float y2 = data.GetValue("y2").Value<float>();
 
-        player1Rotation = Quaternion.Euler(x1, y1, 0);
-        player2Rotation = Quaternion.Euler(x2, y2, 0);
+        player1Rotation = Quaternion.Euler(0, y1, 0);
+        player2Rotation = Quaternion.Euler(0, y2, 0);
+    }
+
+    public void OnAnimation(SocketIOResponse res)
+    {
+        JObject data = JObject.Parse(res.GetValue<string>());
+        player1Animation.SetBool("isMoving", data.GetValue("p1_isMoving").Value<bool>());
+        player1Animation.SetBool("isDashing", data.GetValue("p1_isDashing").Value<bool>());
+        player1Animation.SetBool("isAttacking_01", data.GetValue("p1_isAttacking_01").Value<bool>());
+        player1Animation.SetBool("isAttacking_02", data.GetValue("p1_isAttacking_02").Value<bool>());
+        player1Animation.SetBool("isAttacking_03", data.GetValue("p1_isAttacking_03").Value<bool>());
+        player1Animation.SetBool("isAttacking_04", data.GetValue("p1_isAttacking_04").Value<bool>());
+        player1Animation.SetBool("isAttacking_05", data.GetValue("p1_isAttacking_05").Value<bool>());
+        if (data.GetValue("p1_isDamaged").Value<bool>())
+            player1Animation.SetTrigger("doDamaged");
+        if (data.GetValue("p1_isDead").Value<bool>())
+            player1Animation.SetTrigger("doDead");
+
+        player2Animation.SetBool("isMoving", data.GetValue("p2_isMoving").Value<bool>());
+        player2Animation.SetBool("isDashing", data.GetValue("p2_isDashing").Value<bool>());
+        player2Animation.SetBool("isAttacking", data.GetValue("p2_isAttacking").Value<bool>());
+        if (data.GetValue("p2_isDamaged").Value<bool>())
+            player2Animation.SetTrigger("doDamaged");
+        if (data.GetValue("p2_isDead").Value<bool>())
+            player2Animation.SetTrigger("doDead");
     }
 }

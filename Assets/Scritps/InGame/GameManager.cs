@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
@@ -29,12 +30,6 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-    }
-
-    // Start is called before the first frame update
-    private void Start()
-    {
-        NetworkManager.Instance.EmitGameLoad();
 
         if (NetworkManager.Instance.isPlayer1)
         {
@@ -44,7 +39,13 @@ public class GameManager : MonoBehaviour
         {
             playerController = player2.GetComponent<PlayerController>();
         }
+    }
 
+    // Start is called before the first frame update
+    private IEnumerator Start()
+    {
+        NetworkManager.Instance.EmitGameLoad();
+        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
         maxHp = playerController.health;
         curHp = playerController.health;
         maxStamina = playerController.stamina;
@@ -54,6 +55,10 @@ public class GameManager : MonoBehaviour
         hpText.text = curHp + " / " + maxHp;
         staminaBar.value = curStamina / maxStamina;
         staminaText.text = curStamina + " / " + maxStamina;
+
+        HandleHp();
+        HandleStamina();
+        GetPlayerData();
     }
 
     // Update is called once per frame
@@ -61,6 +66,7 @@ public class GameManager : MonoBehaviour
     {
         HandleHp();
         HandleStamina();
+        GetPlayerData();
     }
 
     private void HandleHp()
@@ -89,14 +95,24 @@ public class GameManager : MonoBehaviour
         staminaBar.value = Mathf.Lerp(staminaBar.value, imsiStamina, Time.deltaTime * 10);
     }
 
-    public static Grid GetGrid()
+    private void GetPlayerData()
     {
-        return Instance.grid;
-    }
-
-    public static Tilemap GetTilemap()
-    {
-        return Instance.tilemap;
+        if (NetworkManager.Instance.isPlayer1)
+        {
+            player2.health = NetworkManager.Instance.player2Hp;
+            player2.stamina = NetworkManager.Instance.player2Stamina;
+            player2.transform.position = NetworkManager.Instance.player2Position;
+            player2.transform.rotation = NetworkManager.Instance.player2Rotation;
+            player2.anim = NetworkManager.Instance.player2Animation;
+        }
+        else if (NetworkManager.Instance.isPlayer2)
+        {
+            player1.health = NetworkManager.Instance.player1Hp;
+            player1.stamina = NetworkManager.Instance.player1Stamina;
+            player1.transform.position = NetworkManager.Instance.player1Position;
+            player1.transform.rotation = NetworkManager.Instance.player1Rotation;
+            player1.anim = NetworkManager.Instance.player1Animation;
+        }
     }
 
     public static GameCamera GetCamera()

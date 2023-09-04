@@ -3,9 +3,8 @@ using UnityEngine;
 
 public class Player2 : MonoBehaviour
 {
-    private BoxCollider2D[] boxColliders;
     private Rigidbody2D rigid;
-    private Animator anim;
+    public Animator anim;
     private GameManager gameManager;
     private UIManager ui;
     private GameCamera gameCamera;
@@ -15,66 +14,47 @@ public class Player2 : MonoBehaviour
     public int health;
     public int stamina;
 
+    public bool isAttacking;
+    public bool isAttackCanceled;
+    public bool isDamaged;
+    public bool isDead;
+    public bool ignoreDamaged;
+
     private Coroutine runningCoroutine;
 
     public Transform attackPoint;
     public Vector2 attackRange;
-    public GameObject bullet;
-    public Transform bulletPos;
 
     // Start is called before the first frame update
     private void Start()
     {
-        boxColliders = GetComponents<BoxCollider2D>();
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         gameManager = GameManager.Instance;
         ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
-
         controller = GetComponent<PlayerController>();
 
         health = 1000;
         stamina = 5000;
+
+        isAttacking = false;
+        isAttackCanceled = false;
+        isDamaged = false;
+        isDead = false;
 
         runningCoroutine = null;
     }
 
     private void Update()
     {
-        GetPlayerData();
-
         // Animations
         if (anim != null)
         {
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack_01") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
-                controller.isAttacking = false;
-                anim.SetBool("isAttacking_01", false);
-            }
-
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack_02") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-            {
-                controller.isAttacking = false;
-                anim.SetBool("isAttacking_02", false);
-            }
-
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack_03") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-            {
-                controller.isAttacking = false;
-                anim.SetBool("isAttacking_03", false);
-            }
-
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack_04") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-            {
-                controller.isAttacking = false;
-                anim.SetBool("isAttacking_04", false);
-            }
-
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Attack_05") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-            {
-                controller.isAttacking = false;
-                anim.SetBool("isAttacking_05", false);
+                isAttacking = false;
+                anim.SetBool("isAttacking", false);
             }
 
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player2_Death") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
@@ -87,20 +67,10 @@ public class Player2 : MonoBehaviour
         {
             if (!Input.GetKey(KeyCode.LeftShift))
             {
-                // Normal Attack
+                // Attack
                 if (Input.GetKeyDown(KeyCode.Z))
                 {
-                    runningCoroutine = StartCoroutine(OnAttack(1));
-                }
-                // Skill 1
-                else if (Input.GetKeyDown(KeyCode.X))
-                {
-                    runningCoroutine = StartCoroutine(OnAttack(2));
-                }
-                // Skill 2
-                else if (Input.GetKeyDown(KeyCode.C))
-                {
-                    runningCoroutine = StartCoroutine(OnAttack(3));
+                    runningCoroutine = StartCoroutine(OnAttack());
                 }
             }
             else
@@ -115,40 +85,20 @@ public class Player2 : MonoBehaviour
                 {
                     runningCoroutine = StartCoroutine(Dash(Vector2.right));
                 }
-
-                // Special Skill 1
-                if (Input.GetKeyDown(KeyCode.X))
-                {
-                    runningCoroutine = StartCoroutine(OnAttack(4));
-                }
-
-                // Special Skill 2
-                if (Input.GetKeyDown(KeyCode.C))
-                {
-                    runningCoroutine = StartCoroutine(OnAttack(5));
-                }
             }
 
             // Attack Cancel
-            if (controller.isAttackCanceled)
+            if (isAttackCanceled)
             {
-                controller.isAttacking = false;
-                controller.ignoreDamaged = false;
-                anim.SetBool("isAttacking_01", false);
-                anim.SetBool("isAttacking_02", false);
-                anim.SetBool("isAttacking_03", false);
-                anim.SetBool("isAttacking_04", false);
-                anim.SetBool("isAttacking_05", false);
-                foreach (BoxCollider2D collider in boxColliders)
-                {
-                    collider.offset = new Vector2(0, 0.004f);
-                }
+                isAttacking = false;
+                ignoreDamaged = false;
+                anim.SetBool("isAttacking", false);
             }
 
             // Death
-            if (health <= 0 && !controller.isDead)
+            if (health <= 0 && !isDead)
             {
-                controller.Death();
+                Death();
             }
         }
     }
@@ -169,14 +119,6 @@ public class Player2 : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player") && collision.gameObject != gameObject)
         {
-            if (anim.GetBool("isDashing"))
-            {
-                attackRange = new Vector2(1.1f, 2.58f);
-                attackPoint.localPosition = new Vector3(0, 0.005f);
-                float intensityY = rigid.velocity.y > 7.6f ? rigid.velocity.y * 1.8f : 0;
-                AttackTo(attackPoint.position, attackRange, 20, 0, intensityY);
-                return;
-            }
             OnDamaged(50, 7.5f, 0.4f, collision.transform.position);
         }
     }
@@ -185,14 +127,6 @@ public class Player2 : MonoBehaviour
     {
         Gizmos.color = Color.blue;
         Gizmos.DrawWireCube(attackPoint.position, attackRange);
-    }
-
-    private void GetPlayerData()
-    {
-        health = NetworkManager.Instance.player2Hp;
-        stamina = NetworkManager.Instance.player2Stamina;
-        transform.position = NetworkManager.Instance.player2Position;
-        transform.rotation = NetworkManager.Instance.player2Rotation;
     }
 
     public void SetHealth(int value)
@@ -221,9 +155,9 @@ public class Player2 : MonoBehaviour
             yield break;
         }
 
-        if (controller.isAttacking)
+        if (isAttacking)
         {
-            controller.isAttackCanceled = true;
+            isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", true);
@@ -243,144 +177,42 @@ public class Player2 : MonoBehaviour
         {
             rigid.AddForce(Vector2.down * 13.5f, ForceMode2D.Impulse);
         }
-        rigid.AddForce(dirc * 32.5f, ForceMode2D.Impulse);
+        rigid.AddForce(dirc * 64f, ForceMode2D.Impulse);
         yield return new WaitForSeconds(0.25f);
         rigid.gravityScale = 5f;
         rigid.velocity = new Vector2(rigid.velocity.normalized.x * 1.75f, rigid.velocity.y);
         yield return new WaitForSeconds(0.2f);
         anim.SetBool("isDashing", false);
-        controller.isAttackCanceled = false;
+        isAttackCanceled = false;
     }
 
-    public IEnumerator OnAttack(int type)
+    public IEnumerator OnAttack()
     {
-        if (controller.isAttacking || controller.isDamaged || controller.isAttackCanceled)
+        if (isAttacking || isDamaged || isAttackCanceled)
         {
             yield break;
         }
 
-        if (type == 1)
-        {
-            controller.isAttacking = true;
-            anim.SetBool("isAttacking_01", true);
-            attackPoint.localPosition = new Vector3(0.19f, 0.05f);
-            attackRange = new Vector2(4.8f, 3.9f);
-            yield return new WaitForSeconds(0.6f);
-            AttackTo(attackPoint.position, attackRange, 20, 0, 0);
-        }
-        if (type == 2)
-        {
-            if (!UseStamina(100))
-            {
-                yield break;
-            }
-            controller.isAttacking = true;
-            anim.SetBool("isAttacking_02", true);
-            attackPoint.localPosition = new Vector3(0.23f, 0.028f);
-            attackRange = new Vector2(2.8f, 1.6f);
-            yield return new WaitForSeconds(0.4f);
-            AttackTo(attackPoint.position, attackRange, 20, 8.4f, 1.2f);
-            Instantiate(bullet, bulletPos.position, transform.rotation);
-            yield return new WaitForSeconds(1f);
-            AttackTo(attackPoint.position, attackRange, 20, 8.4f, 1.2f);
-            Instantiate(bullet, bulletPos.position, transform.rotation);
-        }
-        if (type == 3)
-        {
-            if (health <= 20)
-            {
-                ui.HighlightTextColor(gameManager.hpText, new Color(1, 0, 0));
-                yield break;
-            }
-            if (controller.is1StepJumping || !UseStamina(75))
-            {
-                yield break;
-            }
-            SetHealth(-20);
-            controller.isAttacking = true;
-            anim.SetBool("isAttacking_03", true);
-            attackPoint.localPosition = new Vector3(0, 0);
-            attackRange = new Vector2(5.8f, 2.7f);
-            yield return new WaitForSeconds(1.1f);
-            rigid.gravityScale = 0;
-            foreach (BoxCollider2D collider in boxColliders)
-            {
-                collider.offset = new Vector2(0, 0.32f);
-            }
-            AttackTo(attackPoint.position, attackRange, 150, 3.8f, 23.4f);
-            yield return new WaitForSeconds(0.9f);
-            rigid.gravityScale = 5f;
-            foreach (BoxCollider2D collider in boxColliders)
-            {
-                collider.offset = new Vector2(0, 0.004f);
-            }
-        }
-        if (type == 4)
-        {
-            if (!UseStamina(250))
-            {
-                yield break;
-            }
-            controller.isAttacking = true;
-            anim.SetBool("isAttacking_04", true);
-            attackPoint.localPosition = new Vector3(0.15f, 0.015f);
-            attackRange = new Vector2(5.8f, 1.6f);
-            yield return new WaitForSeconds(0.9f);
-            controller.ignoreDamaged = true;
-            yield return new WaitForSeconds(0.2f);
-            AttackTo(attackPoint.position, attackRange, 30, 0, 8.2f);
-            yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
-            attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
-            AttackTo(attackPoint.position, attackRange, 70, 0, 16.4f);
-            yield return new WaitForSeconds(1.1f);
-            controller.ignoreDamaged = true;
-            attackPoint.localPosition = new Vector3(-0.06f, 0.015f);
-            yield return new WaitForSeconds(0.1f);
-            AttackTo(attackPoint.position, attackRange, 30, 0, 9.8f);
-            yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
-            attackPoint.localPosition = new Vector3(0.15f, 0.015f);
-            yield return new WaitForSeconds(0.1f);
-            AttackTo(attackPoint.position, attackRange, 70, 0, 18.6f);
-            yield return new WaitForSeconds(0.8f);
-            controller.ignoreDamaged = true;
-            yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
-        }
-        if (type == 5)
-        {
-            if (controller.is1StepJumping || !UseStamina(250))
-            {
-                yield break;
-            }
-            controller.isAttacking = true;
-            anim.SetBool("isAttacking_05", true);
-            controller.ignoreDamaged = true;
-            yield return new WaitForSeconds(0.2f);
-            controller.ignoreDamaged = false;
-            foreach (BoxCollider2D collider in boxColliders)
-            {
-                collider.offset = new Vector2(-0.25f, 0.004f);
-            }
-            attackPoint.localPosition = new Vector3(0.21f, 0.32f);
-            attackRange = new Vector2(3.6f, 9.1f);
-            yield return new WaitForSeconds(0.6f);
-            AttackTo(attackPoint.position, attackRange, 240, 1.7f, 26.3f);
-            yield return new WaitForSeconds(1f);
-            controller.ignoreDamaged = true;
-            yield return new WaitForSeconds(0.3f);
-            controller.ignoreDamaged = false;
-            foreach (BoxCollider2D collider in boxColliders)
-            {
-                collider.offset = new Vector2(0, 0.004f);
-            }
-        }
+        isAttacking = true;
+        ignoreDamaged = true;
+        anim.SetBool("isAttacking", true);
+        yield return new WaitForSeconds(1.1f);
+        AttackTo(attackPoint.position, attackRange, 40, 0, 0);
+        yield return new WaitForSeconds(1f);
+        AttackTo(attackPoint.position, attackRange, 20, 0, 0);
+        yield return new WaitForSeconds(0.1f);
+        AttackTo(attackPoint.position, attackRange, 20, 0, 0);
+        yield return new WaitForSeconds(0.1f);
+        AttackTo(attackPoint.position, attackRange, 20, 0, 0);
+        yield return new WaitForSeconds(0.1f);
+        AttackTo(attackPoint.position, attackRange, 20, 0, 0);
+        yield return new WaitForSeconds(0.4f);
+        ignoreDamaged = false;
     }
 
     private void AttackTo(Vector3 pos, Vector2 range, int damage, float intensityX, float intensityY)
     {
-        if (controller.isDamaged || controller.isAttackCanceled)
+        if (isDamaged || isAttackCanceled)
         {
             return;
         }
@@ -390,7 +222,7 @@ public class Player2 : MonoBehaviour
         {
             if (collider.gameObject.CompareTag("Player") && collider.gameObject != gameObject)
             {
-                collider.GetComponent<Player2>().OnDamaged(damage, intensityX, intensityY, transform.position);
+                collider.GetComponent<Player1>().OnDamaged(damage, intensityX, intensityY, transform.position);
             }
         }
 
@@ -405,23 +237,23 @@ public class Player2 : MonoBehaviour
 
     public void OnDamaged(int damage, float intensity, float time, Vector2 targetPos)
     {
-        if (controller.isDamaged || controller.ignoreDamaged)
+        if (isDamaged || ignoreDamaged)
         {
             return;
         }
 
         if (damage >= health)
         {
-            controller.Death();
+            Death();
             return;
         }
 
         StopAllCoroutines();
 
-        controller.isDamaged = true;
-        if (controller.isAttacking)
+        isDamaged = true;
+        if (isAttacking)
         {
-            controller.isAttackCanceled = true;
+            isAttackCanceled = true;
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
@@ -437,11 +269,27 @@ public class Player2 : MonoBehaviour
 
     public void OffDamaged()
     {
-        controller.isDamaged = false;
-        if (controller.isAttackCanceled)
+        isDamaged = false;
+        if (isAttackCanceled)
         {
-            controller.isAttackCanceled = false;
+            isAttackCanceled = false;
         }
         anim.ResetTrigger("doDamaged");
+    }
+
+    public void Death()
+    {
+        health = 0;
+        isDead = true;
+        StopAllCoroutines();
+
+        isAttacking = false;
+        controller.isClimbing = false;
+        controller.isCanClimb = false;
+
+        anim.SetBool("isAttacking", false);
+        anim.SetBool("isMoving", false);
+        anim.SetBool("isDashing", false);
+        anim.SetTrigger("doDead");
     }
 }

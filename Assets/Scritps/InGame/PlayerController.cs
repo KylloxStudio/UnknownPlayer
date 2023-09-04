@@ -21,40 +21,48 @@ public class PlayerController : MonoBehaviour
     public float maxSpeed;
     public float jumpPower;
     public float climbSpeed;
+
     public bool is1StepJumping;
     public bool is2StepJumping;
-    public bool isMoving;
-    public bool isAttacking;
-    public bool isAttackCanceled;
-    public bool isClimbing;
     public bool isCanJump;
     public bool isCanMove;
     public bool isCanClimb;
+    public bool isClimbing;
+
+    public bool isAttacking;
+    public bool isAttackCanceled;
     public bool isDamaged;
     public bool isDead;
     public bool ignoreDamaged;
 
-    [SerializeField]
-    private Vector3 oldPosition;
-    [SerializeField]
-    private Vector3 curPosition;
+    private bool isPlayerDataDiff = false;
 
     private void Awake()
     {
         Instance = this;
 
+        NetworkManager.Instance.player1Hp = player1.health;
+        NetworkManager.Instance.player1Stamina = player1.stamina;
+        NetworkManager.Instance.player1Position = player1.transform.position;
+        NetworkManager.Instance.player1Rotation = player1.transform.rotation;
+
+        NetworkManager.Instance.player2Hp = player2.health;
+        NetworkManager.Instance.player2Stamina = player2.stamina;
+        NetworkManager.Instance.player2Position = player2.transform.position;
+        NetworkManager.Instance.player2Rotation = player2.transform.rotation;
+
         if (NetworkManager.Instance.isPlayer1)
         {
+            health = player1.health;
+            stamina = player1.stamina;
             Destroy(player2.gameObject.GetComponent<PlayerController>());
         }
         else if (NetworkManager.Instance.isPlayer2)
         {
+            health = player2.health;
+            stamina = player2.stamina;
             Destroy(player1.gameObject.GetComponent<PlayerController>());
         }
-
-        SendStatistics();
-        SendPosition();
-        SendRotation();
     }
 
     // Start is called before the first frame update
@@ -69,22 +77,23 @@ public class PlayerController : MonoBehaviour
 
         is1StepJumping = false;
         is2StepJumping = false;
-        isAttacking = false;
-        isAttackCanceled = false;
-        isClimbing = false;
         isCanJump = true;
         isCanMove = true;
         isCanClimb = false;
-        isDamaged = false;
-        isDead = false;
+        isClimbing = false;
 
-        oldPosition = transform.position;
-        curPosition = transform.position;
+        GetStatistics();
+
+        SendStatistics();
+        SendPosition();
+        SendRotation();
     }
 
     // Update is called once per frame
     void Update()
     {
+        GetStatistics();
+
         // Move
         isCanMove = CheckCanMove();
         if (isCanMove)
@@ -138,7 +147,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Player Direction
-        if (!(isDamaged || isDead || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
+        if (!(isDamaged || isDead || anim.GetBool("isAttacking") || anim.GetBool("isAttacking_04") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
         {
             if (Input.GetKey(KeyCode.A))
             {
@@ -150,9 +159,13 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        SendStatistics();
-        SendPosition();
-        SendRotation();
+        if (isPlayerDataDiff)
+        {
+            SendStatistics();
+            SendPosition();
+            SendRotation();
+            SendAnimation();
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -201,7 +214,7 @@ public class PlayerController : MonoBehaviour
 
     private bool CheckCanJump()
     {
-        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
+        if (!(isDamaged || isDead || is2StepJumping || isCanClimb || anim.GetBool("isAttacking") || anim.GetBool("isAttacking_03") || anim.GetBool("isAttacking_05") || anim.GetBool("isDashing")))
         {
             return true;
         }
@@ -262,39 +275,48 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void Death()
-    {
-        health = 0;
-        isDead = true;
-        StopAllCoroutines();
-
-        isClimbing = false;
-        isAttacking = false;
-        isCanClimb = false;
-
-        anim.SetBool("isAttacking_01", false);
-        anim.SetBool("isAttacking_02", false);
-        anim.SetBool("isAttacking_03", false);
-        anim.SetBool("isAttacking_04", false);
-        anim.SetBool("isAttacking_05", false);
-        anim.SetBool("isMoving", false);
-        anim.SetBool("isDashing", false);
-        anim.SetTrigger("doDead");
-    }
-
-    private void SendStatistics()
+    private void GetStatistics()
     {
         if (NetworkManager.Instance.isPlayer1)
         {
             health = player1.health;
             stamina = player1.stamina;
+            isAttacking = player1.isAttacking;
+            isAttackCanceled = player1.isAttackCanceled;
+            isDamaged = player1.isDamaged;
+            isDead = player1.isDead;
+
+            if (NetworkManager.Instance.player1Hp != player1.health || NetworkManager.Instance.player1Stamina != player1.stamina || NetworkManager.Instance.player1Position != player1.transform.position || NetworkManager.Instance.player1Rotation != player1.transform.rotation)
+            {
+                isPlayerDataDiff = true;
+            }
+            else
+            {
+                isPlayerDataDiff = false;
+            }
         }
         else if (NetworkManager.Instance.isPlayer2)
         {
             health = player2.health;
             stamina = player2.stamina;
-        }
+            isAttacking = player2.isAttacking;
+            isAttackCanceled = player2.isAttackCanceled;
+            isDamaged = player2.isDamaged;
+            isDead = player2.isDead;
 
+            if (NetworkManager.Instance.player2Hp != player2.health || NetworkManager.Instance.player2Stamina != player2.stamina || NetworkManager.Instance.player2Position != player2.transform.position || NetworkManager.Instance.player2Rotation != player2.transform.rotation)
+            {
+                isPlayerDataDiff = true;
+            }
+            else
+            {
+                isPlayerDataDiff = false;
+            }
+        }
+    }
+
+    private void SendStatistics()
+    {
         JObject data = new JObject();
         data.Add("hp1", player1.health);
         data.Add("stamina1", player1.stamina);
@@ -316,10 +338,28 @@ public class PlayerController : MonoBehaviour
     private void SendRotation()
     {
         JObject data = new JObject();
-        data.Add("x1", player1.transform.rotation.x);
-        data.Add("y1", player1.transform.rotation.y);
-        data.Add("x2", player2.transform.rotation.x);
-        data.Add("y2", player2.transform.rotation.y);
+        data.Add("y1", player1.transform.rotation.y != 0 ? 180 : 0);
+        data.Add("y2", player2.transform.rotation.y != 0 ? 180 : 0);
         NetworkManager.Instance.socket.Emit("rotation", data.ToString());
+    }
+
+    private void SendAnimation()
+    {
+        JObject data = new JObject();
+        data.Add("p1_isMoving", player1.anim.GetBool("isMoving"));
+        data.Add("p1_isDashing", player1.anim.GetBool("isDashing"));
+        data.Add("p1_isAttacking_01", player1.anim.GetBool("isAttacking_01"));
+        data.Add("p1_isAttacking_02", player1.anim.GetBool("isAttacking_02"));
+        data.Add("p1_isAttacking_03", player1.anim.GetBool("isAttacking_03"));
+        data.Add("p1_isAttacking_04", player1.anim.GetBool("isAttacking_04"));
+        data.Add("p1_isAttacking_05", player1.anim.GetBool("isAttacking_05"));
+        data.Add("p1_isDamaged", player1.isDamaged);
+        data.Add("p1_isDead", player1.isDead);
+        data.Add("p2_isMoving", player2.anim.GetBool("isMoving"));
+        data.Add("p2_isDashing", player2.anim.GetBool("isDashing"));
+        data.Add("p2_isAttacking", player2.anim.GetBool("isAttacking"));
+        data.Add("p2_isDamaged", player2.isDamaged);
+        data.Add("p2_isDead", player2.isDead);
+        NetworkManager.Instance.socket.Emit("animation", data.ToString());
     }
 }

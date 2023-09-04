@@ -54,15 +54,19 @@ io.on('connection', socket => {
   });
 
   socket.on('statistics', (data) => {
-    socket.emit("statistics", data);
+    socket.broadcast.emit("statistics", data);
   });
 
   socket.on('position', (data) => {
-    socket.emit("position", data);
+    socket.broadcast.emit("position", data);
   });
 
   socket.on('rotation', (data) => {
-    socket.emit("rotation", data);
+    socket.broadcast.emit("rotation", data);
+  });
+
+  socket.on('animation', (data) => {
+    socket.broadcast.emit("animation", data);
   });
 
   socket.on('disconnect', () => {
