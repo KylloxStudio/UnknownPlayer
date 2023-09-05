@@ -286,13 +286,25 @@ public class PlayerController : MonoBehaviour
             isDamaged = player1.isDamaged;
             isDead = player1.isDead;
 
-            if (NetworkManager.Instance.player1Hp != player1.health || NetworkManager.Instance.player1Stamina != player1.stamina || NetworkManager.Instance.player1Position != player1.transform.position || NetworkManager.Instance.player1Rotation != player1.transform.rotation)
+            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player1Animations)
             {
-                isPlayerDataDiff = true;
+                if (player1.anim.GetBool(item.Key) != item.Value)
+                {
+                    isPlayerDataDiff = true;
+                    break;
+                }
             }
-            else
+
+            if (!isPlayerDataDiff)
             {
-                isPlayerDataDiff = false;
+                if (NetworkManager.Instance.player1Hp != player1.health || NetworkManager.Instance.player1Stamina != player1.stamina || NetworkManager.Instance.player1Position != player1.transform.position || NetworkManager.Instance.player1Rotation != player1.transform.rotation)
+                {
+                    isPlayerDataDiff = true;
+                }
+                else
+                {
+                    isPlayerDataDiff = false;
+                }
             }
         }
         else if (NetworkManager.Instance.isPlayer2)
@@ -304,13 +316,25 @@ public class PlayerController : MonoBehaviour
             isDamaged = player2.isDamaged;
             isDead = player2.isDead;
 
-            if (NetworkManager.Instance.player2Hp != player2.health || NetworkManager.Instance.player2Stamina != player2.stamina || NetworkManager.Instance.player2Position != player2.transform.position || NetworkManager.Instance.player2Rotation != player2.transform.rotation)
+            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player2Animations)
             {
-                isPlayerDataDiff = true;
+                if (player2.anim.GetBool(item.Key) != item.Value)
+                {
+                    isPlayerDataDiff = true;
+                    break;
+                }
             }
-            else
+
+            if (!isPlayerDataDiff)
             {
-                isPlayerDataDiff = false;
+                if (NetworkManager.Instance.player2Hp != player2.health || NetworkManager.Instance.player2Stamina != player2.stamina || NetworkManager.Instance.player2Position != player2.transform.position || NetworkManager.Instance.player2Rotation != player2.transform.rotation)
+                {
+                    isPlayerDataDiff = true;
+                }
+                else
+                {
+                    isPlayerDataDiff = false;
+                }
             }
         }
     }
