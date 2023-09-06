@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 public class Player2 : MonoBehaviour
 {
@@ -25,6 +27,8 @@ public class Player2 : MonoBehaviour
     public Transform attackPoint;
     public Vector2 attackRange;
 
+    public Dictionary<string, bool> animations;
+
     // Start is called before the first frame update
     private void Start()
     {
@@ -34,6 +38,8 @@ public class Player2 : MonoBehaviour
         ui = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
         controller = GetComponent<PlayerController>();
+
+        animations = new Dictionary<string, bool>();
 
         health = 1000;
         stamina = 5000;
@@ -51,6 +57,14 @@ public class Player2 : MonoBehaviour
         // Animations
         if (anim != null)
         {
+            for (int i = 0; i < anim.parameterCount; i++)
+            {
+                if (!animations.ContainsKey(anim.parameters[i].name))
+                    animations.Add(anim.parameters[i].name, anim.GetBool(anim.parameters[i].name));
+                else
+                    animations[anim.parameters[i].name] = anim.GetBool(anim.parameters[i].name);
+            }
+
             // 경고 메세지 방지
             anim.SetBool("isAttacking_01", anim.GetBool("isAttacking"));
             anim.SetBool("isAttacking_02", anim.GetBool("isAttacking"));
@@ -255,8 +269,6 @@ public class Player2 : MonoBehaviour
             return;
         }
 
-        StopAllCoroutines();
-
         isDamaged = true;
         if (isAttacking)
         {
@@ -264,12 +276,12 @@ public class Player2 : MonoBehaviour
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
+        anim.SetBool("isDamaged", true);
 
         int dirc = transform.position.x - targetPos.x > 0 ? 1 : -1;
         rigid.AddForce(new Vector2(dirc, 1) * intensity, ForceMode2D.Impulse);
 
-        SetHealth(-damage);
-        anim.SetBool("isDamaged", true);
+        SendDamaged(damage);
         gameCamera.VibrateForTime(0.25f, 0.4f);
         Invoke("OffDamaged", time);
     }
@@ -282,6 +294,16 @@ public class Player2 : MonoBehaviour
             isAttackCanceled = false;
         }
         anim.SetBool("isDamaged", false);
+    }
+
+    public void SendDamaged(int damage)
+    {
+        JObject data = new JObject();
+        data.Add("hp1", GameManager.Instance.player1.health - damage);
+        data.Add("stamina1", GameManager.Instance.player1.stamina);
+        data.Add("hp2", health - damage);
+        data.Add("stamina2", stamina);
+        NetworkManager.Instance.socket.Emit("statistics", data.ToString());
     }
 
     public void Death()

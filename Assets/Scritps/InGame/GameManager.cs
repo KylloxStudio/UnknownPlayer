@@ -40,87 +40,101 @@ public class GameManager : MonoBehaviour
         {
             playerController = player2.GetComponent<PlayerController>();
         }
+
+        playerController.SendStatistics();
     }
 
     // Start is called before the first frame update
-    private IEnumerator Start()
+    private void Start()
     {
         NetworkManager.Instance.EmitGameLoad();
-        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
-        maxHp = playerController.health;
-        curHp = playerController.health;
-        maxStamina = playerController.stamina;
-        curStamina = playerController.stamina;
 
-        hpBar.value = curHp / maxHp;
-        hpText.text = curHp + " / " + maxHp;
-        staminaBar.value = curStamina / maxStamina;
-        staminaText.text = curStamina + " / " + maxStamina;
-
-        HandleHp();
-        HandleStamina();
-        GetPlayerData();
+        StartCoroutine(HandleHp());
+        StartCoroutine(HandleStamina());
+        StartCoroutine(GetPlayersData());
     }
 
     // Update is called once per frame
     private void Update()
     {
-        HandleHp();
-        HandleStamina();
-        GetPlayerData();
     }
 
-    private void HandleHp()
+    private IEnumerator HandleHp()
     {
+        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
+        maxHp = playerController.health;
         curHp = playerController.health;
+        hpBar.value = curHp / maxHp;
         hpText.text = curHp + " / " + maxHp;
-        if (curHp > 0)
+        while (NetworkManager.Instance.isGameLoaded)
         {
-            imsiHp = curHp / maxHp;
-            hpBar.value = Mathf.Lerp(hpBar.value, imsiHp, Time.deltaTime * 10);
-        }
-        else
-        {
-            Image hpFill = hpBar.transform.GetChild(2).GetChild(0).gameObject.GetComponent<Image>();
-            hpFill.color = new Color(1, 0, 0);
-            hpBar.direction = Slider.Direction.RightToLeft;
-            hpBar.value = Mathf.Lerp(hpBar.value, 1, Time.deltaTime * 10);
+            curHp = playerController.health;
+            hpText.text = curHp + " / " + maxHp;
+            if (curHp > 0)
+            {
+                imsiHp = curHp / maxHp;
+                hpBar.value = Mathf.Lerp(hpBar.value, imsiHp, Time.deltaTime * 10);
+            }
+            else
+            {
+                Image hpFill = hpBar.transform.GetChild(2).GetChild(0).gameObject.GetComponent<Image>();
+                hpFill.color = new Color(1, 0, 0);
+                hpBar.direction = Slider.Direction.RightToLeft;
+                hpBar.value = Mathf.Lerp(hpBar.value, 1, Time.deltaTime * 10);
+            }
+            yield return null;
         }
     }
 
-    private void HandleStamina()
+    private IEnumerator HandleStamina()
     {
+        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
+        maxStamina = playerController.stamina;
         curStamina = playerController.stamina;
-        imsiStamina = curStamina / maxStamina;
+        staminaBar.value = curStamina / maxStamina;
         staminaText.text = curStamina + " / " + maxStamina;
-        staminaBar.value = Mathf.Lerp(staminaBar.value, imsiStamina, Time.deltaTime * 10);
+        while (NetworkManager.Instance.isGameLoaded)
+        {
+            curStamina = playerController.stamina;
+            imsiStamina = curStamina / maxStamina;
+            staminaText.text = curStamina + " / " + maxStamina;
+            staminaBar.value = Mathf.Lerp(staminaBar.value, imsiStamina, Time.deltaTime * 10);
+            yield return null;
+        }
     }
 
-    private void GetPlayerData()
+    private IEnumerator GetPlayersData()
     {
-        if (NetworkManager.Instance.isPlayer1)
+        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
+        while (NetworkManager.Instance.isGameLoaded)
         {
-            player2.health = NetworkManager.Instance.player2Hp;
-            player2.stamina = NetworkManager.Instance.player2Stamina;
-            player2.transform.position = NetworkManager.Instance.player2Position;
-            player2.transform.rotation = NetworkManager.Instance.player2Rotation;
-            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player2Animations)
+            if (NetworkManager.Instance.isPlayer1)
             {
-                Debug.Log(item.Key);
-                Debug.Log(item.Value);
-                player2.anim.SetBool(item.Key, item.Value);
+                yield return new WaitUntil(() => NetworkManager.Instance.player2Statistics.Length == 2);
+                player2.health = NetworkManager.Instance.player2Statistics[0];
+                player2.stamina = NetworkManager.Instance.player2Statistics[1];
+                player2.transform.position = NetworkManager.Instance.player2Position;
+                player2.transform.rotation = NetworkManager.Instance.player2Rotation;
+                for (int i = 0; i < player2.anim.parameterCount; i++)
+                {
+                    yield return new WaitUntil(() => NetworkManager.Instance.player2Animations.TryGetValue(player2.anim.parameters[i].name, out bool boolean));
+                    player2.anim.SetBool(player2.anim.parameters[i].name, NetworkManager.Instance.player2Animations[player2.anim.parameters[i].name]);
+                }
             }
-        }
-        else if (NetworkManager.Instance.isPlayer2)
-        {
-            player1.health = NetworkManager.Instance.player1Hp;
-            player1.stamina = NetworkManager.Instance.player1Stamina;
-            player1.transform.position = NetworkManager.Instance.player1Position;
-            player1.transform.rotation = NetworkManager.Instance.player1Rotation;
-            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player1Animations)
+            else if (NetworkManager.Instance.isPlayer2)
             {
-                player1.anim.SetBool(item.Key, item.Value);
+                yield return new WaitUntil(() => NetworkManager.Instance.player1Statistics.Length == 2);
+                player1.health = NetworkManager.Instance.player1Statistics[0];
+                player1.stamina = NetworkManager.Instance.player1Statistics[1];
+                player1.transform.position = NetworkManager.Instance.player1Position;
+                player1.transform.rotation = NetworkManager.Instance.player1Rotation;
+                for (int i = 0; i < player1.anim.parameterCount; i++)
+                {
+                    yield return new WaitUntil(() => NetworkManager.Instance.player1Animations.TryGetValue(player1.anim.parameters[i].name, out bool boolean));
+                    player1.anim.SetBool(player1.anim.parameters[i].name, NetworkManager.Instance.player1Animations[player1.anim.parameters[i].name]);
+                }
             }
+            yield return null;
         }
     }
 

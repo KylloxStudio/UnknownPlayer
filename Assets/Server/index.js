@@ -19,6 +19,7 @@ io.use((socket, next) => {
 });
 
 let players = [];
+let matchedPlayers = [];
 io.on('connection', socket => {
 	const ip = socket.request.connection.remoteAddress.replace("::ffff:", "");
   const id = socket.id;
@@ -40,6 +41,11 @@ io.on('connection', socket => {
   socket.on('match', (data) => {
     clearInterval(socket.interval);
     socket.emit('match');
+    matchedPlayers.push(data);
+    if (matchedPlayers.length == 2)
+      players.splice(data);
+    console.log(players);
+    console.log(matchedPlayers);
   });
 
   socket.on('quit', (data) => {
@@ -71,6 +77,7 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     players.splice(players.findIndex(e => e == id), 1);
+    matchedPlayers.splice(matchedPlayers.findIndex(e => e == id), 1);
     console.log('Disconnected:', ip, id);
   });
 

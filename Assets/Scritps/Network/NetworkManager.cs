@@ -19,10 +19,8 @@ public class NetworkManager : MonoBehaviour
     public bool isMatched;
     public bool isGameLoaded;
 
-    public int player1Hp;
-    public int player2Hp;
-    public int player1Stamina;
-    public int player2Stamina;
+    public int[] player1Statistics;
+    public int[] player2Statistics;
 
     public Vector3 player1Position;
     public Vector3 player2Position;
@@ -146,7 +144,7 @@ public class NetworkManager : MonoBehaviour
         else if (ids[1] == playerId)
             isPlayer2 = true;
 
-        socket.Emit("match");
+        socket.Emit("match", playerId);
     }
 
     public void OnMatch(SocketIOResponse res)
@@ -177,10 +175,10 @@ public class NetworkManager : MonoBehaviour
         int hp2 = data.GetValue("hp2").Value<int>();
         int stamina2 = data.GetValue("stamina2").Value<int>();
 
-        player1Hp = hp1;
-        player1Stamina = stamina1;
-        player2Hp = hp2;
-        player2Stamina = stamina2;
+        int[] statistics1 = { hp1, stamina1 };
+        int[] statistics2 = { hp2, stamina2 };
+        player1Statistics = statistics1;
+        player2Statistics = statistics2;
     }
 
     public void OnPosition(SocketIOResponse res)
@@ -208,20 +206,18 @@ public class NetworkManager : MonoBehaviour
     public void OnAnimation(SocketIOResponse res)
     {
         JObject data = JObject.Parse(res.GetValue<string>());
-        player1Animations.Add("isMoving", data.GetValue("p1_isMoving").Value<bool>());
-        player1Animations.Add("isDashing", data.GetValue("p1_isDashing").Value<bool>());
-        player1Animations.Add("isAttacking_01", data.GetValue("p1_isAttacking_01").Value<bool>());
-        player1Animations.Add("isAttacking_02", data.GetValue("p1_isAttacking_02").Value<bool>());
-        player1Animations.Add("isAttacking_03", data.GetValue("p1_isAttacking_03").Value<bool>());
-        player1Animations.Add("isAttacking_04", data.GetValue("p1_isAttacking_04").Value<bool>());
-        player1Animations.Add("isAttacking_05", data.GetValue("p1_isAttacking_05").Value<bool>());
-        player1Animations.Add("isDamaged", data.GetValue("p1_isDamaged").Value<bool>());
-        player1Animations.Add("isDead", data.GetValue("p1_isDead").Value<bool>());
+        string[] animList = { "isMoving", "isDashing", "isAttacking", "isAttacking_01", "isAttacking_02", "isAttacking_03", "isAttacking_04", "isAttacking_05", "isDamaged", "isDead" };
+        for (int i = 0; i < animList.Length; i++)
+        {
+            if (!player1Animations.ContainsKey(animList[i]))
+                player1Animations.Add(animList[i], data.GetValue("p1_" + animList[i]).Value<bool>());
+            else
+                player1Animations[animList[i]] = data.GetValue("p1_" + animList[i]).Value<bool>();
 
-        player2Animations.Add("isMoving", data.GetValue("p2_isMoving").Value<bool>());
-        player2Animations.Add("isDashing", data.GetValue("p2_isDashing").Value<bool>());
-        player2Animations.Add("isAttacking", data.GetValue("p2_isAttacking").Value<bool>());
-        player2Animations.Add("isDamaged", data.GetValue("p2_isDamaged").Value<bool>());
-        player2Animations.Add("isDead", data.GetValue("p2_isDead").Value<bool>());
+            if (!player2Animations.ContainsKey(animList[i]))
+                player2Animations.Add(animList[i], data.GetValue("p2_" + animList[i]).Value<bool>());
+            else
+                player2Animations[animList[i]] = data.GetValue("p2_" + animList[i]).Value<bool>();
+        }
     }
 }

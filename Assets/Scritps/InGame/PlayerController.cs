@@ -35,21 +35,9 @@ public class PlayerController : MonoBehaviour
     public bool isDead;
     public bool ignoreDamaged;
 
-    private bool isPlayerDataDiff = false;
-
     private void Awake()
     {
         Instance = this;
-
-        NetworkManager.Instance.player1Hp = player1.health;
-        NetworkManager.Instance.player1Stamina = player1.stamina;
-        NetworkManager.Instance.player1Position = player1.transform.position;
-        NetworkManager.Instance.player1Rotation = player1.transform.rotation;
-
-        NetworkManager.Instance.player2Hp = player2.health;
-        NetworkManager.Instance.player2Stamina = player2.stamina;
-        NetworkManager.Instance.player2Position = player2.transform.position;
-        NetworkManager.Instance.player2Rotation = player2.transform.rotation;
 
         if (NetworkManager.Instance.isPlayer1)
         {
@@ -82,17 +70,30 @@ public class PlayerController : MonoBehaviour
         isCanClimb = false;
         isClimbing = false;
 
-        GetStatistics();
-
-        SendStatistics();
-        SendPosition();
-        SendRotation();
+        StartCoroutine(SendPlayerData());
     }
 
     // Update is called once per frame
     void Update()
     {
-        GetStatistics();
+        if (NetworkManager.Instance.isPlayer1)
+        {
+            health = player1.health;
+            stamina = player1.stamina;
+            isAttacking = player1.isAttacking;
+            isAttackCanceled = player1.isAttackCanceled;
+            isDamaged = player1.isDamaged;
+            isDead = player1.isDead;
+        }
+        else if (NetworkManager.Instance.isPlayer2)
+        {
+            health = player2.health;
+            stamina = player2.stamina;
+            isAttacking = player2.isAttacking;
+            isAttackCanceled = player2.isAttackCanceled;
+            isDamaged = player2.isDamaged;
+            isDead = player2.isDead;
+        }
 
         // Move
         isCanMove = CheckCanMove();
@@ -157,14 +158,6 @@ public class PlayerController : MonoBehaviour
             {
                 transform.rotation = Quaternion.Euler(0, 0, 0);
             }
-        }
-
-        if (isPlayerDataDiff)
-        {
-            SendStatistics();
-            SendPosition();
-            SendRotation();
-            SendAnimation();
         }
     }
 
@@ -275,71 +268,21 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void GetStatistics()
+    private IEnumerator SendPlayerData()
     {
-        if (NetworkManager.Instance.isPlayer1)
+        yield return new WaitUntil(() => NetworkManager.Instance.isGameLoaded);
+        while (NetworkManager.Instance.isGameLoaded)
         {
-            health = player1.health;
-            stamina = player1.stamina;
-            isAttacking = player1.isAttacking;
-            isAttackCanceled = player1.isAttackCanceled;
-            isDamaged = player1.isDamaged;
-            isDead = player1.isDead;
-
-            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player1Animations)
-            {
-                if (player1.anim.GetBool(item.Key) != item.Value)
-                {
-                    isPlayerDataDiff = true;
-                    break;
-                }
-            }
-
-            if (!isPlayerDataDiff)
-            {
-                if (NetworkManager.Instance.player1Hp != player1.health || NetworkManager.Instance.player1Stamina != player1.stamina || NetworkManager.Instance.player1Position != player1.transform.position || NetworkManager.Instance.player1Rotation != player1.transform.rotation)
-                {
-                    isPlayerDataDiff = true;
-                }
-                else
-                {
-                    isPlayerDataDiff = false;
-                }
-            }
-        }
-        else if (NetworkManager.Instance.isPlayer2)
-        {
-            health = player2.health;
-            stamina = player2.stamina;
-            isAttacking = player2.isAttacking;
-            isAttackCanceled = player2.isAttackCanceled;
-            isDamaged = player2.isDamaged;
-            isDead = player2.isDead;
-
-            foreach (KeyValuePair<string, bool> item in NetworkManager.Instance.player2Animations)
-            {
-                if (player2.anim.GetBool(item.Key) != item.Value)
-                {
-                    isPlayerDataDiff = true;
-                    break;
-                }
-            }
-
-            if (!isPlayerDataDiff)
-            {
-                if (NetworkManager.Instance.player2Hp != player2.health || NetworkManager.Instance.player2Stamina != player2.stamina || NetworkManager.Instance.player2Position != player2.transform.position || NetworkManager.Instance.player2Rotation != player2.transform.rotation)
-                {
-                    isPlayerDataDiff = true;
-                }
-                else
-                {
-                    isPlayerDataDiff = false;
-                }
-            }
+            if (!isAttacking && !isDamaged)
+                SendStatistics();
+            SendPosition();
+            SendRotation();
+            SendAnimation();
+            yield return null;
         }
     }
 
-    private void SendStatistics()
+    public void SendStatistics()
     {
         JObject data = new JObject();
         data.Add("hp1", player1.health);
@@ -349,7 +292,7 @@ public class PlayerController : MonoBehaviour
         NetworkManager.Instance.socket.Emit("statistics", data.ToString());
     }
 
-    private void SendPosition()
+    public void SendPosition()
     {
         JObject data = new JObject();
         data.Add("x1", player1.transform.position.x);
@@ -359,7 +302,7 @@ public class PlayerController : MonoBehaviour
         NetworkManager.Instance.socket.Emit("position", data.ToString());
     }
 
-    private void SendRotation()
+    public void SendRotation()
     {
         JObject data = new JObject();
         data.Add("y1", player1.transform.rotation.y != 0 ? 180 : 0);
@@ -367,25 +310,15 @@ public class PlayerController : MonoBehaviour
         NetworkManager.Instance.socket.Emit("rotation", data.ToString());
     }
 
-    private void SendAnimation()
+    public void SendAnimation()
     {
         JObject data = new JObject();
-        data.Add("p1_isMoving", player1.anim.GetBool("isMoving"));
-        data.Add("p1_isDashing", player1.anim.GetBool("isDashing"));
-        data.Add("p1_isAttacking_01", player1.anim.GetBool("isAttacking_01"));
-        data.Add("p1_isAttacking_02", player1.anim.GetBool("isAttacking_02"));
-        data.Add("p1_isAttacking_03", player1.anim.GetBool("isAttacking_03"));
-        data.Add("p1_isAttacking_04", player1.anim.GetBool("isAttacking_04"));
-        data.Add("p1_isAttacking_05", player1.anim.GetBool("isAttacking_05"));
-        data.Add("p1_isDamaged", player1.anim.GetBool("isDamaged"));
-        data.Add("p1_isDead", player1.anim.GetBool("isDead"));
-
-        data.Add("p2_isMoving", player2.anim.GetBool("isMoving"));
-        data.Add("p2_isDashing", player2.anim.GetBool("isDashing"));
-        data.Add("p2_isAttacking", player2.anim.GetBool("isAttacking"));
-        data.Add("p2_isDamaged", player2.anim.GetBool("isDamaged"));
-        data.Add("p2_isDead", player2.anim.GetBool("isDead"));
-
+        string[] animList = { "isMoving", "isDashing", "isAttacking", "isAttacking_01", "isAttacking_02", "isAttacking_03", "isAttacking_04", "isAttacking_05", "isDamaged", "isDead" };
+        for (int i = 0; i < animList.Length; i++)
+        {
+            data.Add("p1_" + animList[i], player1.anim.GetBool(animList[i]));
+            data.Add("p2_" + animList[i], player2.anim.GetBool(animList[i]));
+        }
         NetworkManager.Instance.socket.Emit("animation", data.ToString());
     }
 }

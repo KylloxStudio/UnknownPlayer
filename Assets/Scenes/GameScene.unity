@@ -1481,7 +1481,7 @@ GameObject:
   - component: {fileID: 575116636}
   - component: {fileID: 575116635}
   - component: {fileID: 575116640}
-  m_Layer: 2
+  m_Layer: 6
   m_Name: Player1
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -1627,7 +1627,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!61 &575116637
 BoxCollider2D:
@@ -4798,7 +4798,7 @@ GameObject:
   - component: {fileID: 1962264611}
   - component: {fileID: 1962264614}
   - component: {fileID: 1962264617}
-  m_Layer: 2
+  m_Layer: 7
   m_Name: Player2
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -4898,7 +4898,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!61 &1962264612
 BoxCollider2D:
@@ -4932,7 +4932,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
-  m_Offset: {x: 0.01, y: -0.07}
+  m_Offset: {x: -0.031, y: -0.023000002}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -4943,7 +4943,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.3, y: 0.36}
+  m_Size: {x: 0.237, y: 0.45999998}
   m_EdgeRadius: 0
 --- !u!95 &1962264613
 Animator:
@@ -4988,8 +4988,6 @@ MonoBehaviour:
   ignoreDamaged: 0
   attackPoint: {fileID: 353918191}
   attackRange: {x: 7, y: 7}
-  bullet: {fileID: 0}
-  bulletPos: {fileID: 0}
 --- !u!61 &1962264615
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5022,7 +5020,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.01, y: -0.07}
+  m_Offset: {x: -0.03, y: -0.023000002}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -5033,7 +5031,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.31, y: 0.37}
+  m_Size: {x: 0.25, y: 0.47999996}
   m_EdgeRadius: 0
 --- !u!251 &1962264616
 PlatformEffector2D:

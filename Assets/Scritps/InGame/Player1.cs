@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 public class Player1 : MonoBehaviour
 {
@@ -7,7 +9,7 @@ public class Player1 : MonoBehaviour
     private Rigidbody2D rigid;
     public Animator anim;
     private GameManager gameManager;
-    private UIManager ui;
+    private UIManager uiManager;
     private GameCamera gameCamera;
 
     private PlayerController controller;
@@ -28,6 +30,8 @@ public class Player1 : MonoBehaviour
     public GameObject bullet;
     public Transform bulletPos;
 
+    public Dictionary<string, bool> animations;
+
     // Start is called before the first frame update
     private void Start()
     {
@@ -35,9 +39,11 @@ public class Player1 : MonoBehaviour
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         gameManager = GameManager.Instance;
-        ui = UIManager.Instance;
+        uiManager = UIManager.Instance;
         gameCamera = GameManager.GetCamera();
         controller = GetComponent<PlayerController>();
+
+        animations = new Dictionary<string, bool>();
 
         health = 1000;
         stamina = 5000;
@@ -56,6 +62,17 @@ public class Player1 : MonoBehaviour
         // Animations
         if (anim != null)
         {
+            for (int i = 0; i < anim.parameterCount; i++)
+            {
+                if (!animations.ContainsKey(anim.parameters[i].name))
+                    animations.Add(anim.parameters[i].name, anim.GetBool(anim.parameters[i].name));
+                else
+                    animations[anim.parameters[i].name] = anim.GetBool(anim.parameters[i].name);
+            }
+
+            // 경고 메세지 방지
+            anim.SetBool("isAttacking", isAttacking);
+
             if (anim.GetCurrentAnimatorStateInfo(0).IsName("Player1_Attack_01") && anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
                 isAttacking = false;
@@ -205,7 +222,7 @@ public class Player1 : MonoBehaviour
     {
         if (stamina - value < 0)
         {
-            ui.HighlightTextColor(gameManager.staminaText, new Color(1, 0, 0));
+            uiManager.HighlightTextColor(gameManager.staminaText, new Color(1, 0, 0));
             return false;
         }
         else
@@ -290,7 +307,7 @@ public class Player1 : MonoBehaviour
         {
             if (health <= 20)
             {
-                ui.HighlightTextColor(gameManager.hpText, new Color(1, 0, 0));
+                uiManager.HighlightTextColor(gameManager.hpText, new Color(1, 0, 0));
                 yield break;
             }
             if (controller.is1StepJumping || !UseStamina(75))
@@ -417,8 +434,6 @@ public class Player1 : MonoBehaviour
             return;
         }
 
-        StopAllCoroutines();
-
         isDamaged = true;
         if (isAttacking)
         {
@@ -426,12 +441,12 @@ public class Player1 : MonoBehaviour
         }
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", false);
+        anim.SetBool("isDamaged", true);
 
         int dirc = transform.position.x - targetPos.x > 0 ? 1 : -1;
         rigid.AddForce(new Vector2(dirc, 1) * intensity, ForceMode2D.Impulse);
 
-        SetHealth(-damage);
-        anim.SetBool("isDamaged", true);
+        SendDamaged(damage);
         gameCamera.VibrateForTime(0.25f, 0.4f);
         Invoke("OffDamaged", time);
     }
@@ -444,6 +459,16 @@ public class Player1 : MonoBehaviour
             isAttackCanceled = false;
         }
         anim.SetBool("isDamaged", false);
+    }
+
+    public void SendDamaged(int damage)
+    {
+        JObject data = new JObject();
+        data.Add("hp1", health - damage);
+        data.Add("stamina1", stamina);
+        data.Add("hp2", GameManager.Instance.player2.health);
+        data.Add("stamina2", GameManager.Instance.player2.stamina);
+        NetworkManager.Instance.socket.Emit("statistics", data.ToString());
     }
 
     public void Death()
