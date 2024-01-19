@@ -193,23 +193,23 @@ public class Player1 : MonoBehaviour
         animator.SetBool("isMoving", false);
         animator.SetBool("isDashing", true);
 
-        if (controller.is1StepJumping)
+        if (controller.jumpCount >= 1)
         {
             rigid.gravityScale = 0f;
             rigid.velocity = new Vector2(rigid.velocity.normalized.x, rigid.velocity.normalized.y);
         }
         transform.rotation = dirc.x < 0 ? Quaternion.Euler(0, 180, 0) : Quaternion.Euler(0, 0, 0);
-        yield return new WaitForSeconds(0.25f);
+        yield return new WaitForSeconds(0.1f);
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            rigid.AddForce(Vector2.up * 15f, ForceMode2D.Impulse);
+            rigid.AddForce(Vector2.up * 12.5f, ForceMode2D.Impulse);
         }
         else if (Input.GetKey(KeyCode.DownArrow))
         {
-            rigid.AddForce(Vector2.down * 15f, ForceMode2D.Impulse);
+            rigid.AddForce(Vector2.down * 12.5f, ForceMode2D.Impulse);
         }
-        rigid.AddForce(dirc * 32.5f, ForceMode2D.Impulse);
-        yield return new WaitForSeconds(0.25f);
+        rigid.AddForce(dirc * 37.5f, ForceMode2D.Impulse);
+        yield return new WaitForSeconds(0.2f);
         rigid.gravityScale = 5f;
         rigid.velocity = new Vector2(rigid.velocity.normalized.x * 1.75f, rigid.velocity.y);
         yield return new WaitForSeconds(0.2f);
@@ -257,7 +257,7 @@ public class Player1 : MonoBehaviour
                 UIManager.HighlightTextColor(controller.hpText, new Color(1, 0, 0));
                 yield break;
             }
-            if (controller.is1StepJumping || !controller.UseStamina(75))
+            if (controller.jumpCount >= 1 || !controller.UseStamina(75))
             {
                 yield break;
             }
@@ -315,7 +315,7 @@ public class Player1 : MonoBehaviour
         }
         if (type == 5)
         {
-            if (controller.is1StepJumping || !controller.UseStamina(250))
+            if (controller.jumpCount >= 1 || !controller.UseStamina(250))
             {
                 yield break;
             }

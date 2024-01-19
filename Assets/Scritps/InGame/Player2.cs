@@ -105,7 +105,7 @@ public class Player2 : MonoBehaviour
         anim.SetBool("isMoving", false);
         anim.SetBool("isDashing", true);
 
-        if (controller.is1StepJumping)
+        if (controller.jumpCount >= 1)
         {
             rigid.gravityScale = 0f;
             rigid.velocity = new Vector2(rigid.velocity.normalized.x, rigid.velocity.normalized.y);

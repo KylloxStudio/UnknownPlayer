@@ -31,9 +31,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     public float imsiSmallHealth;
     public float imsiStamina;
 
-    public bool is1StepJumping;
-    public bool is2StepJumping;
     public bool isCanJump;
+    public int jumpCount;
     public bool isCanMove;
     public bool isCanChangeDirc;
     public bool isCanClimb;
@@ -72,9 +71,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         health = status.maxHealth;
         stamina = status.maxStamina;
 
-        is1StepJumping = false;
-        is2StepJumping = false;
         isCanJump = true;
+        jumpCount = 0;
         isCanMove = true;
         isCanClimb = false;
         isClimbing = false;
@@ -100,12 +98,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             {
                 if (Input.GetKey(KeyCode.RightArrow))
                 {
-                    rigid.velocity += new Vector2(0.9f, 0f);
+                    rigid.velocity += new Vector2(0.8f, 0f);
                     //rigid.AddForce(Vector2.right * 1.1f, ForceMode2D.Impulse);
                 }
                 if (Input.GetKey(KeyCode.LeftArrow))
                 {
-                    rigid.velocity += new Vector2(-0.9f, 0f);
+                    rigid.velocity += new Vector2(-0.8f, 0f);
                     //rigid.AddForce(Vector2.left * 1.1f, ForceMode2D.Impulse);
                 }
 
@@ -143,10 +141,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
                 if (Input.GetKey(KeyCode.LeftArrow))
                 {
                     transform.rotation = Quaternion.Euler(0, 180, 0);
+                    transform.GetChild(2).transform.rotation = Quaternion.Euler(0, 180, 0);
                 }
                 else if (Input.GetKey(KeyCode.RightArrow))
                 {
                     transform.rotation = Quaternion.Euler(0, 0, 0);
+                    transform.GetChild(2).transform.rotation = Quaternion.Euler(0, 0, 0);
                 }
             }
 
@@ -176,22 +176,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         rigid.position = Camera.main.ViewportToWorldPoint(pos);
 
         // Debug.DrawRay(rigid.position, new Vector3(0, -20, 0), new Color(0, 1, 0));
-    }
-
-    void OnTriggerEnter2D(Collider2D collider)
-    {
-        if (PV.IsMine && rigid.velocity.y < 0)
-        {
-            if (is1StepJumping)
-            {
-                is1StepJumping = false;
-            }
-
-            if (is2StepJumping)
-            {
-                is2StepJumping = false;
-            }
-        }
     }
 
     void OnTriggerStay2D(Collider2D collider)
@@ -229,15 +213,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     void JumpRPC()
     {
-        if (is2StepJumping)
-        {
-            return;
-        }
-        if (is1StepJumping)
-        {
-            is2StepJumping = true;
-        }
-        is1StepJumping = true;
+        if (jumpCount >= 2) return;
+        jumpCount++;
         rigid.velocity = Vector2.zero;
         rigid.AddForce(Vector2.up * status.jumpPower, ForceMode2D.Impulse);
     }
@@ -323,7 +300,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private bool CheckCanMove()
     {
-        if (!(isAttacking || isDamaged || isDead || animator.GetBool("isDashing") || Input.GetKey(KeyCode.LeftShift)))
+        if (!isAttacking && !isDamaged && !isDead && !animator.GetBool("isDashing") && !Input.GetKey(KeyCode.LeftShift))
         {
             return true;
         }
@@ -335,19 +312,20 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private bool CheckCanJump()
     {
-        bool flag = !(isDamaged || isDead || is2StepJumping || isCanClimb || animator.GetBool("isDashing"));
-        if (unitCode == UnitCode.player1)
+        if (rigid.velocity.y < 0)
         {
-            if (flag || !(animator.GetBool("isAttacking_03") || animator.GetBool("isAttacking_05")))
+            Debug.DrawRay(rigid.position, new Vector2(0f, -1.5f), new Color(0, 1, 0));
+            RaycastHit2D rayHit = Physics2D.Raycast(rigid.position, new Vector2(0f, -1.5f), 1.5f);
+            if (rayHit.collider != null)
             {
-                return true;
-            }
-            else
-            {
-                return false;
+                if (rayHit.collider.gameObject != gameObject && rayHit.distance < 0.5f)
+                {
+                    Debug.Log(rayHit.distance);
+                    jumpCount = 0;
+                }
             }
         }
-        else if (flag)
+        if (jumpCount < 2 && !isDamaged && !isDead && !isCanClimb && !animator.GetBool("isDashing") && !animator.GetBool("isAttacking_03") && !animator.GetBool("isAttacking_05"))
         {
             return true;
         }
@@ -359,28 +337,13 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private bool CheckCanChangeDirc()
     {
-        bool flag = !(isDamaged || isDead || animator.GetBool("isDashing"));
-        if (unitCode == UnitCode.player1)
+        if (!isDamaged && !isDead && !animator.GetBool("isDashing") && !animator.GetBool("isAttacking_04") && !animator.GetBool("isAttacking_05"))
         {
-            if (flag || !(animator.GetBool("isAttacking_04") || animator.GetBool("isAttacking_05")))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
         }
         else
         {
-            if (flag)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return false;
         }
     }
 
