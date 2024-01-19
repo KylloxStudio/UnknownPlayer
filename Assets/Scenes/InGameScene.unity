@@ -1201,7 +1201,7 @@ GameObject:
   - component: {fileID: 961404054}
   - component: {fileID: 961404053}
   - component: {fileID: 961404052}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Platforms
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2091,7 +2091,7 @@ GameObject:
   - component: {fileID: 1840356149}
   - component: {fileID: 1840356151}
   - component: {fileID: 1840356153}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Platform
   m_TagString: Platform
   m_Icon: {fileID: 0}

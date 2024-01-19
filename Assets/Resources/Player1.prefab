@@ -1448,7 +1448,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17cb348bea688d54cb7d4130ac2e2b3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PV: {fileID: 7888473670955785251}
+  rigid: {fileID: 2155642205473172955}
+  animator: {fileID: 4496237920396028604}
   unitCode: 0
   hpBar: {fileID: 4825076607942145259}
   hpText: {fileID: 2912571624161295949}
