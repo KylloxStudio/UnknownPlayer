@@ -5,10 +5,8 @@ using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 using Photon.Pun;
 
-public class Player1 : MonoBehaviour
+public class Player1 : MonoBehaviourPunCallbacks
 {
-    public PhotonView PV;
-
     BoxCollider2D[] boxColliders;
     Rigidbody2D rigid;
     Animator animator;
@@ -38,7 +36,7 @@ public class Player1 : MonoBehaviour
 
     void Update()
     {
-        if (PV.IsMine)
+        if (photonView.IsMine)
         {
             if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
             {
@@ -65,7 +63,7 @@ public class Player1 : MonoBehaviour
                         animator.SetBool("isAttacking_05", false);
                         break;
                     case "Player1_Death":
-                        PV.RPC("DestroyRPC", RpcTarget.AllBuffered);
+                        photonView.RPC("DestroyRPC", RpcTarget.AllBuffered);
                         break;
                     default:
                         //Debug.Log("cannot found case. " + animator.GetCurrentAnimatorClipInfo(0)[0].clip.name);
@@ -160,13 +158,13 @@ public class Player1 : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (PV.IsMine && collision.gameObject.CompareTag("Player") && !collision.gameObject.GetComponent<PhotonView>().IsMine)
+        if (photonView.IsMine && collision.gameObject.CompareTag("Player") && !collision.gameObject.GetComponent<PhotonView>().IsMine)
         {
             if (animator.GetBool("isDashing"))
             {
                 attackRange = new Vector2(1.1f, 2.58f);
                 attackPoint.localPosition = new Vector3(0, 0.005f);
-                float intensityY = rigid.velocity.y > 7.6f ? rigid.velocity.y * 1.8f : 0;
+                float intensityY = rigid.velocity.y > 7.6f ? rigid.velocity.y * 1.8f : 0.1f;
                 controller.AttackTo(attackPoint.position, attackRange, 20, 1.2f, intensityY, 0.2f);
                 return;
             }
@@ -219,7 +217,7 @@ public class Player1 : MonoBehaviour
 
     public IEnumerator OnAttack(int type)
     {
-        if (!PV.IsMine || controller.isAttacking || controller.isDamaged || controller.isAttackCanceled)
+        if (!photonView.IsMine || controller.isAttacking || controller.isDamaged || controller.isAttackCanceled)
         {
             yield break;
         }

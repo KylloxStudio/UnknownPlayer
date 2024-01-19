@@ -9,12 +9,10 @@ using System;
 
 public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 {
-    public PhotonView PV;
-    
     Rigidbody2D rigid;
     Animator animator;
-    GameCamera gameCamera;
 
+    GameCamera gameCamera;
     PlayerStatus status;
     public UnitCode unitCode;
 
@@ -58,7 +56,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     // Start is called before the first frame update
     void Start()
     {
-        if (PV.IsMine)
+        if (photonView.IsMine)
         {
             hpBar.gameObject.SetActive(true);
             staminaBar.gameObject.SetActive(true);
@@ -66,6 +64,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             staminaBar.value = 1f;
 
             transform.rotation = NetworkManager.Instance.PlayerID == 1 ? Quaternion.Euler(0, 180, 0): Quaternion.Euler(0, 0, 0);
+            transform.GetChild(2).transform.rotation = NetworkManager.Instance.PlayerID == 1 ? Quaternion.Euler(0, 180, 0) : Quaternion.Euler(0, 0, 0);
         }
 
         health = status.maxHealth;
@@ -86,7 +85,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     // Update is called once per frame
     void Update()
     {
-        if (PV.IsMine)
+        if (photonView.IsMine)
         {
             HandleHpBar();
             HandleSmallHpBar();
@@ -121,7 +120,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             isCanJump = CheckCanJump();
             if (isCanJump && Input.GetKeyDown(KeyCode.UpArrow))
             {
-                PV.RPC("JumpRPC", RpcTarget.All);
+                photonView.RPC("JumpRPC", RpcTarget.All);
             }
 
             // Walking Animation
@@ -174,13 +173,29 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         pos.x = Mathf.Clamp(pos.x, 0, 1);
         pos.y = Mathf.Clamp(pos.y, 0, 1);
         rigid.position = Camera.main.ViewportToWorldPoint(pos);
+    }
 
-        // Debug.DrawRay(rigid.position, new Vector3(0, -20, 0), new Color(0, 1, 0));
+    void OnDrawGizmos()
+    {
+        if (rigid.velocity.y < 0f)
+        {
+            RaycastHit2D rayHit = Physics2D.BoxCast(rigid.position, new Vector2(0.8f, 0.04f), 0f, Vector2.down, 1.3f, LayerMask.GetMask("Platform"));
+            Gizmos.color = Color.red;
+            if (rayHit.collider != null)
+            {
+                Gizmos.DrawRay(rigid.position, Vector2.down * rayHit.distance);
+                Gizmos.DrawWireCube(rigid.position + Vector2.down * rayHit.distance, new Vector2(0.8f, 0.04f));
+            }
+            else
+            {
+                Gizmos.DrawRay(rigid.position, Vector2.down * 1.3f);
+            }
+        }
     }
 
     void OnTriggerStay2D(Collider2D collider)
     {
-        if (PV.IsMine && collider.CompareTag("Ladder"))
+        if (photonView.IsMine && collider.CompareTag("Ladder"))
         {
             OnClimb();
         }
@@ -188,7 +203,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     void OnTriggerExit2D(Collider2D collider)
     {
-        if (PV.IsMine && collider.CompareTag("Ladder"))
+        if (photonView.IsMine && collider.CompareTag("Ladder"))
         {
             OffClimb();
         }
@@ -221,7 +236,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     public void SetHealth(int value)
     {
-        PV.RPC("SetHealthRPC", RpcTarget.AllBuffered, value);
+        photonView.RPC("SetHealthRPC", RpcTarget.AllBuffered, value);
     }
 
     [PunRPC]
@@ -239,7 +254,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         }
         else
         {
-            PV.RPC("UseStaminaRPC", RpcTarget.AllBuffered, value);
+            photonView.RPC("UseStaminaRPC", RpcTarget.AllBuffered, value);
             return true;
         }
     }
@@ -278,7 +293,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         else
         {
             Image hpFill = smallHpBar.transform.GetChild(1).GetChild(0).gameObject.GetComponent<Image>();
-            PV.RPC("ChangeSmallHpBarColor", RpcTarget.All, new object[] { 1, 0, 0 });
+            photonView.RPC("ChangeSmallHpBarColor", RpcTarget.All, new object[] { 1, 0, 0 });
             smallHpBar.direction = Slider.Direction.RightToLeft;
             smallHpBar.value = Mathf.Lerp(smallHpBar.value, 1, Time.deltaTime * 10);
         }
@@ -312,17 +327,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private bool CheckCanJump()
     {
-        if (rigid.velocity.y < 0)
+        if (rigid.velocity.y < 0f)
         {
-            Debug.DrawRay(rigid.position, new Vector2(0f, -1.5f), new Color(0, 1, 0));
-            RaycastHit2D rayHit = Physics2D.Raycast(rigid.position, new Vector2(0f, -1.5f), 1.5f);
+            RaycastHit2D rayHit = Physics2D.BoxCast(transform.position, new Vector2(0.8f, 0.04f), 0f, Vector2.down, 1.3f, LayerMask.GetMask("Platform"));
             if (rayHit.collider != null)
             {
-                if (rayHit.collider.gameObject != gameObject && rayHit.distance < 0.5f)
-                {
-                    Debug.Log(rayHit.distance);
-                    jumpCount = 0;
-                }
+                jumpCount = 0;
             }
         }
         if (jumpCount < 2 && !isDamaged && !isDead && !isCanClimb && !animator.GetBool("isDashing") && !animator.GetBool("isAttacking_03") && !animator.GetBool("isAttacking_05"))
@@ -452,7 +462,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         rigid.AddForce(force, ForceMode2D.Impulse);
 
         SetHealth(health - damage);
-        if (PV.IsMine)
+        if (photonView.IsMine)
         {
             gameCamera.VibrateForTime(0.25f, 0.4f);
         }
@@ -474,7 +484,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         health = 0;
         isDead = true;
         StopAllCoroutines();
-        if (PV.IsMine)
+        if (photonView.IsMine)
         {
             gameCamera.VibrateForTime(0.35f, 0.4f);
         }
