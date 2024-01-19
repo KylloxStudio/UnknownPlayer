@@ -1,7 +1,5 @@
 # Unknwon Player
 ### Unity2D MultiPlay Action Game
-![special_1_01](http://kyllox4804.dothome.co.kr/images/unknown_player/special_1_01.jpg)
-![special_1_02](http://kyllox4804.dothome.co.kr/images/unknown_player/special_1_02.jpg)
 
 ## Controls
 - A / D : 좌우 이동
